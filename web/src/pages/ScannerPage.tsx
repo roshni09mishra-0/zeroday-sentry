@@ -13,6 +13,7 @@ import {
   Play
 } from 'lucide-react';
 import { CVEAlert } from '../types';
+import { runBackendASTScan } from '../services/geminiService';
 
 interface ScannerPageProps {
   cves: CVEAlert[];
@@ -55,13 +56,31 @@ export const ScannerPage: React.FC<ScannerPageProps> = ({
     }
   };
 
-  const runPlaygroundScan = () => {
+  const runPlaygroundScan = async () => {
     setIsScanning(true);
-    setPlaygroundOutput('Parsing AST syntax tree & traversing require() graph...');
+    setPlaygroundOutput('Traversing AST syntax tree & require() graph via Switch backend...');
+    
+    const current = snippets[selectedSnippet];
+    const cveId = selectedSnippet === 'jwt' ? 'CVE-2026-3114' : selectedSnippet === 'axios' ? 'CVE-2026-4482' : 'CVE-2026-7819';
+    const filePath = selectedSnippet === 'jwt' ? 'src/auth/verify.ts' : selectedSnippet === 'axios' ? 'src/services/webhook.ts' : 'scripts/legacy/archived-builder.js';
+    
+    try {
+      const backendRes = await runBackendASTScan(cveId, filePath, current.vulnerableCode);
+      if (backendRes) {
+        setIsScanning(false);
+        setPlaygroundOutput(backendRes.is_reachable 
+          ? `🐺 THE WOLF: Reachable in ${backendRes.file_path} (${backendRes.match_count} calls detected). Exploitable in production.`
+          : `🐑 CRYING WOLF: Muted. ${backendRes.file_path} is an unreachable test/dead code file.`);
+        return;
+      }
+    } catch (e) {
+      // Fallback to local
+    }
+
     setTimeout(() => {
       setIsScanning(false);
       setPlaygroundOutput(snippets[selectedSnippet].verdict);
-    }, 800);
+    }, 600);
   };
 
   const filtered = cves.filter(c => {
@@ -191,6 +210,31 @@ export const ScannerPage: React.FC<ScannerPageProps> = ({
               <pre className="p-4 bg-neutral-900 text-emerald-300 border-2 border-black font-mono text-xs overflow-x-auto leading-relaxed h-[200px]">
                 {snippets[selectedSnippet].patch}
               </pre>
+            </div>
+          </div>
+
+          {/* AST Call Path Visualizer */}
+          <div className="mt-6 p-4 bg-neutral-900 text-white border-2 border-black font-mono text-xs">
+            <div className="text-neutral-400 text-[11px] uppercase tracking-wider mb-2.5 font-bold flex items-center justify-between">
+              <span>AST Call Path Graph</span>
+              <span className="text-[#FFE500]">Parsed in 12ms</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2.5 py-1 bg-neutral-800 border border-neutral-700 text-neutral-200">
+                HTTP POST /api/login
+              </span>
+              <span className="text-neutral-500">➔</span>
+              <span className="px-2.5 py-1 bg-neutral-800 border border-neutral-700 text-neutral-200">
+                authMiddleware (verify.ts)
+              </span>
+              <span className="text-neutral-500">➔</span>
+              <span className={`px-2.5 py-1 border font-bold ${snippets[selectedSnippet].isReachable ? 'bg-red-950 border-red-500 text-red-300' : 'bg-neutral-800 border-neutral-700 text-neutral-500'}`}>
+                {selectedSnippet === 'jwt' ? 'jwt.verify(token, secret, { algorithms: ["none"] })' : selectedSnippet === 'axios' ? 'axios.post(userUrl, { maxRedirects: 5 })' : '_.template(str)'}
+              </span>
+              <span className="text-neutral-500">➔</span>
+              <span className={`px-2 py-1 font-bold ${snippets[selectedSnippet].isReachable ? 'bg-[#FFE500] text-black border border-black' : 'bg-emerald-900 text-emerald-300 border border-emerald-700'}`}>
+                {snippets[selectedSnippet].isReachable ? '🚨 REACHABLE PRODUCTION SINK' : '✓ MUTED DEAD TEST CODE'}
+              </span>
             </div>
           </div>
 

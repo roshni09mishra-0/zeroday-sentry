@@ -103,13 +103,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             <a
-              href="https://github.com/sandbox-quantum/switch"
+              href="https://github.com/roshni09mishra-0/zeroday-sentry"
               target="_blank"
               rel="noreferrer"
-              className="px-4 py-2 bg-black text-white text-xs font-bold rounded hover:bg-neutral-800 transition-colors inline-flex items-center gap-1.5"
+              className="px-4 py-2 bg-black text-white text-xs font-bold border-2 border-black shadow-neo-sm hover:translate-x-0.5 hover:translate-y-0.5 transition-all inline-flex items-center gap-1.5 font-mono"
             >
-              <span>GitHub</span>
-              <ExternalLink className="w-3 h-3 text-neutral-400" />
+              <span>GitHub Repo</span>
+              <ExternalLink className="w-3 h-3 text-[#FFE500]" />
             </a>
           </div>
         </div>
