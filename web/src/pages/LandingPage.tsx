@@ -520,12 +520,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           {/* 6-Step Pipeline Grid with Neo-Brutalist cards and traveling pulse */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
             {[
-              { step: '01', title: 'Webhook Ingest', role: 'System', desc: 'Raw CVE advisory parsed from NIST / GitHub feed' },
-              { step: '02', title: 'AST Walker', role: '@cve-analyst', desc: 'Traverses require graph to prove reachable call sites' },
-              { step: '03', title: 'Patch Synth', role: '@patch-crafter', desc: 'LLM generates syntax-safe code migration' },
-              { step: '04', title: 'Sandbox Tests', role: 'Docker Runner', desc: 'Executes actual npm test suite; fails block PR' },
-              { step: '05', title: 'Team War Room', role: 'Multi-Bridge', desc: 'Posts thread in Slack, Teams, or Discord' },
-              { step: '06', title: 'Human Signoff', role: 'Lead Dev', desc: 'Single-click merge closes CVE and pushes to main' },
+              { step: '01', title: 'Advisory Ingest', role: 'Event Trigger', desc: 'Captures raw CVE feeds from NIST NVD and GitHub Dependabot before dependencies desync.' },
+              { step: '02', title: 'AST Call Crawler', role: '@cve-analyst', desc: 'Visits JavaScript/TypeScript syntax trees to trace if the vulnerable function is actually executed.' },
+              { step: '03', title: 'Syntax Codemod', role: '@patch-crafter', desc: 'Rewrites deprecated options and breaking APIs to match the newer library version spec.' },
+              { step: '04', title: 'Sandbox Tests', role: 'Test Runner', desc: 'Executes actual test suites in an isolated sandbox. Any failing assertion immediately halts the PR.' },
+              { step: '05', title: 'Team War Room', role: 'Multi-Bridge', desc: 'Delivers a concise 3-line diff directly into Slack, Discord, or Teams with zero notification noise.' },
+              { step: '06', title: 'Human Signoff', role: 'Lead Dev', desc: 'The lead engineer reviews the green diff and types "Approved." Nothing ever merges without a human.' },
             ].map((p, idx) => (
               <div 
                 key={idx} 
