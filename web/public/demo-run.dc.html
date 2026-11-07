@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZeroDay Sentry · Demo Run</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-canvas: #090b0e;
+      --bg-sidebar: #0e1117;
+      --bg-panel: #11151c;
+      --bg-hover: #161b24;
+      --border: #1e2430;
+      --border-light: #2a3344;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --text-dim: #647080;
+      --green: #10b981;
+      --green-bg: #06281e;
+      --green-border: #0f5132;
+      --green-text: #34d399;
+      --red: #ef4444;
+      --red-bg: #281014;
+      --red-border: #5a1f26;
+      --red-text: #f87171;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+    a { color: inherit; text-decoration: none; }
+    .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+    .app-frame {
+      max-width: 1280px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      background-color: var(--bg-canvas);
+    }
+    .main-body { display: flex; flex: 1; width: 100%; }
+
+    /* Left Sidebar */
+    .sidebar {
+      width: 250px;
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-mark { font-weight: 700; font-size: 15px; letter-spacing: -0.01em; color: var(--text); }
+    .channel-section { padding: 16px 8px; flex: 1; }
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 4px 8px 8px;
+    }
+    .channel-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+      transition: background-color 0.1s, color 0.1s;
+    }
+    .channel-link:hover { background-color: var(--bg-hover); color: var(--text); }
+    .channel-link.active { background-color: var(--bg-hover); color: var(--text); font-weight: 600; }
+    .channel-link.active .channel-hash { color: var(--green); }
+    .channel-hash { font-family: 'JetBrains Mono', monospace; color: var(--text-dim); font-size: 14px; }
+    
+    .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); }
+    .github-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background-color: #161b22;
+      border: 1px solid var(--border-light);
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      text-align: center;
+      transition: background-color 0.12s;
+    }
+    .github-item:hover { background-color: #1f242c; }
+
+    /* Content Stage */
+    .content-stage { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .channel-topbar {
+      height: 52px;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: rgba(14, 17, 23, 0.7);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .channel-title {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .channel-title span {
+      color: var(--text-muted);
+      font-weight: 400;
+      font-size: 12px;
+      margin-left: 8px;
+    }
+    .content-area {
+      padding: 32px 36px 48px;
+      max-width: 980px;
+    }
+
+    h1.page-heading {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      color: var(--text);
+      margin-bottom: 24px;
+    }
+
+    /* Playback Control Bar */
+    .playback-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 16px;
+      margin-bottom: 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+    .playback-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .control-btn {
+      padding: 5px 12px;
+      background-color: #161b24;
+      border: 1px solid var(--border-light);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.1s;
+    }
+    .control-btn:hover { background-color: #212936; }
+    .playback-status {
+      color: var(--text-muted);
+    }
+
+    /* Split View Container: Chat Mock (Left) + Code Panel (Right) */
+    .split-view-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    @media (min-width: 860px) {
+      .split-view-grid {
+        grid-template-columns: 1.25fr 1fr;
+      }
+    }
+
+    /* Chat Room Mock */
+    .chat-mock-container {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-mock-header {
+      padding: 10px 16px;
+      background-color: #141923;
+      border-bottom: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .chat-feed {
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      flex: 1;
+    }
+    .msg-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      transition: opacity 0.2s;
+    }
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+      background-color: #1d2430;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .avatar-bot { background-color: #1e2838; color: #93c5fd; }
+    .avatar-agent { background-color: var(--green-bg); color: var(--green-text); border: 1px solid var(--green-border); }
+    .avatar-human { background-color: #272138; color: #d8b4fe; border: 1px solid #493b68; }
+
+    .msg-body { flex: 1; min-width: 0; }
+    .msg-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .sender-name { font-size: 13px; font-weight: 600; color: var(--text); }
+    .sender-name.agent-name { color: var(--green-text); }
+    .badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+    .badge-bot { background-color: #1e2838; color: #93c5fd; border: 1px solid #2d3d54; }
+    .badge-agent { background-color: var(--green-bg); color: var(--green-text); border: 1px solid var(--green-border); }
+    .badge-human { background-color: #272138; color: #d8b4fe; border: 1px solid #493b68; }
+    .timestamp { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .msg-text { font-size: 13px; line-height: 1.6; color: var(--text); }
+
+    /* Interactive PR Box in Thread */
+    .pr-interactive-card {
+      margin-top: 10px;
+      background-color: #0b0e14;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .pr-status-badge {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 3px;
+    }
+    .status-draft {
+      background-color: #252e3e;
+      color: #93c5fd;
+      border: 1px solid #37475f;
+    }
+    .status-approved {
+      background-color: var(--green-bg);
+      color: var(--green-text);
+      border: 1px solid var(--green-border);
+    }
+    .approve-action-btn {
+      align-self: flex-start;
+      padding: 6px 14px;
+      background-color: var(--green);
+      color: #031b11;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.1s;
+    }
+    .approve-action-btn:hover { background-color: #0fa472; }
+    .approve-action-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--green-text);
+      padding: 8px 16px;
+      background-color: #0d121a;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Right Split: Code Evidence Panel */
+    .code-evidence-panel {
+      background-color: #090c12;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      max-height: 700px;
+    }
+    .code-panel-header {
+      padding: 10px 14px;
+      background-color: #121722;
+      border-bottom: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .code-panel-body {
+      padding: 16px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      overflow-y: auto;
+      flex: 1;
+      color: #94a3b8;
+    }
+    .code-line {
+      display: flex;
+      gap: 12px;
+    }
+    .line-no {
+      color: var(--text-dim);
+      user-select: none;
+      width: 28px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .line-code {
+      white-space: pre-wrap;
+    }
+    .line-highlight {
+      background-color: rgba(16, 185, 129, 0.15);
+      border-left: 2px solid var(--green);
+      margin: 0 -14px;
+      padding: 0 14px 0 12px;
+      color: #e2e8f0;
+      font-weight: 600;
+    }
+
+    .caption-line {
+      padding: 8px 16px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      background-color: #0d1016;
+    }
+
+    /* Section: Proof */
+    .section-proof {
+      border-top: 1px solid var(--border);
+      padding-top: 40px;
+      margin-bottom: 48px;
+    }
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      color: var(--text);
+      margin-bottom: 24px;
+    }
+    .proof-block {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .proof-header {
+      padding: 10px 16px;
+      background-color: #141923;
+      border-bottom: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .diff-pre {
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #cbd5e1;
+      overflow-x: auto;
+    }
+    .diff-file-header {
+      color: #94a3b8;
+      font-weight: 600;
+      margin-top: 10px;
+      margin-bottom: 4px;
+    }
+    .diff-file-header:first-child { margin-top: 0; }
+    .diff-del {
+      background-color: var(--red-bg);
+      color: var(--red-text);
+      display: block;
+      padding: 1px 4px;
+      border-left: 2px solid var(--red);
+    }
+    .diff-add {
+      background-color: var(--green-bg);
+      color: var(--green-text);
+      display: block;
+      padding: 1px 4px;
+      border-left: 2px solid var(--green);
+    }
+
+    /* Test Strip Two-State */
+    .test-strip-container {
+      padding: 16px;
+    }
+    .test-strip-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .tab-btn {
+      padding: 6px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background-color: #161b24;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .tab-btn.active-tab {
+      background-color: #1f2736;
+      border-color: var(--border-light);
+      color: var(--text);
+    }
+    .test-output-box {
+      background-color: #0a0d13;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .test-fail { color: var(--red-text); }
+    .test-pass { color: var(--green-text); }
+
+    /* Triage Table */
+    .table-container {
+      overflow-x: auto;
+    }
+    table.triage-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+    table.triage-table th {
+      padding: 10px 14px;
+      background-color: #141923;
+      border-bottom: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    table.triage-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    table.triage-table tr:last-child td { border-bottom: none; }
+    table.triage-table td code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    /* Footer */
+    footer.shared-footer {
+      border-top: 1px solid var(--border);
+      padding: 16px 24px;
+      font-size: 12px;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      background-color: var(--bg-sidebar);
+    }
+    footer a { color: var(--text-muted); text-decoration: underline; text-underline-offset: 3px; }
+    footer a:hover { color: var(--text); }
+
+    @media (max-width: 768px) {
+      .main-body { flex-direction: column; }
+      .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+      .sidebar-header { justify-content: space-between; }
+      .channel-section { display: flex; overflow-x: auto; padding: 8px 12px; gap: 6px; }
+      .section-label { display: none; }
+      .channel-link { white-space: nowrap; margin-bottom: 0; padding: 6px 10px; }
+      .sidebar-footer { display: none; }
+      .content-area { padding: 24px 16px; }
+      h1.page-heading { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-frame">
+    <div class="main-body">
+      
+      <!-- Left Sidebar (Channels) -->
+      <aside class="sidebar">
+        <div>
+          <div class="sidebar-header">
+            <span class="brand-mark">ZeroDay Sentry</span>
+          </div>
+
+          <div class="channel-section">
+            <div class="section-label">Channels</div>
+            <a href="index.dc.html" class="channel-link">
+              <span class="channel-hash">#</span>
+              <span>home</span>
+            </a>
+            <a href="how-it-works.dc.html" class="channel-link">
+              <span class="channel-hash">#</span>
+              <span>how-it-works</span>
+            </a>
+            <a href="demo-run.dc.html" class="channel-link active">
+              <span class="channel-hash">#</span>
+              <span>demo-run</span>
+              <span style="width: 6px; height: 6px; border-radius: 50%; background-color: var(--green); margin-left: auto;"></span>
+            </a>
+            <a href="faq.dc.html" class="channel-link">
+              <span class="channel-hash">#</span>
+              <span>faq</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="https://github.com/roshni09mishra-0/zeroday-sentry" target="_blank" rel="noreferrer" class="github-item">
+            <span>GitHub Repository</span>
+          </a>
+        </div>
+      </aside>
+
+      <!-- Main Stage Content Area -->
+      <main class="content-stage">
+        
+        <!-- Channel Topbar -->
+        <header class="channel-topbar">
+          <div class="channel-title">
+            <span class="channel-hash font-mono">#</span>
+            <strong>demo-run</strong>
+            <span>acme/checkout-web · security-war-room playback</span>
+          </div>
+          <a href="https://github.com/roshni09mishra-0/zeroday-sentry" target="_blank" rel="noreferrer" class="btn btn-secondary" style="padding: 5px 12px; font-size: 12px; background-color: #161b22; border: 1px solid var(--border-light); border-radius: 4px;">
+            GitHub
+          </a>
+        </header>
+
+        <!-- Page Body Content -->
+        <div class="content-area">
+          <h1 class="page-heading">A real run on a demo repo (acme/checkout-web)</h1>
+
+          <!-- Playback Controls -->
+          <div class="playback-bar">
+            <div class="playback-actions">
+              <button id="btnPlay" class="control-btn" onclick="togglePlay()">Play Run</button>
+              <button id="btnRestart" class="control-btn" onclick="restartPlay()">Restart</button>
+            </div>
+            <div id="playbackStatus" class="playback-status">Showing final run state</div>
+          </div>
+
+          <!-- Split View: Chat Room Mock (Left) + Code Evidence (Right) -->
+          <div class="split-view-grid">
+            
+            <!-- Chat Room Mock -->
+            <div class="chat-mock-container">
+              <div class="chat-mock-header">
+                <span>#security-war-room</span>
+                <span>acme/checkout-web</span>
+              </div>
+
+              <div class="chat-feed" id="chatFeed">
+                
+                <!-- Msg 1: Dependabot -->
+                <div class="msg-row" id="msg1">
+                  <div class="avatar avatar-bot">DB</div>
+                  <div class="msg-body">
+                    <div class="msg-header">
+                      <span class="sender-name">Dependabot</span>
+                      <span class="badge badge-bot">bot</span>
+                      <span class="timestamp">10:42</span>
+                    </div>
+                    <div class="msg-text">
+                      2 new alerts on acme/checkout-web<br>
+                      • axios 0.27.2 CVE-2023-45857 Medium (6.5)<br>
+                      • lodash 4.17.20 CVE-2021-23337 High (7.2)
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Msg 2: Meera -->
+                <div class="msg-row" id="msg2">
+                  <div class="avatar">M</div>
+                  <div class="msg-body">
+                    <div class="msg-header">
+                      <span class="sender-name">Meera</span>
+                      <span class="timestamp">10:42</span>
+                    </div>
+                    <div class="msg-text">
+                      @cve-analyst are these real for us?
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Msg 3: @cve-analyst verdict -->
+                <div class="msg-row" id="msg3">
+                  <div class="avatar avatar-agent">CA</div>
+                  <div class="msg-body">
+                    <div class="msg-header">
+                      <span class="sender-name agent-name">@cve-analyst</span>
+                      <span class="badge badge-agent">Agent</span>
+                      <span class="timestamp">10:43</span>
+                    </div>
+                    <div class="msg-text" style="display: flex; flex-direction: column; gap: 8px;">
+                      <div>Checked both against src/ (41 files).</div>
+                      <div>
+                        <strong>lodash CVE-2021-23337: NOT REACHABLE.</strong> The flaw is in _.template. lodash is imported in 6 files and we use debounce, get and isEqual. No template, lodash/template or lodash.template anywhere. Bump to 4.17.21 in the next routine update.
+                      </div>
+                      <div>
+                        <strong style="color: var(--green-text);">axios CVE-2023-45857: REACHABLE.</strong> src/api/client.js:42 creates the shared instance with withCredentials: true, and src/api/rates.js:9 calls partner-rates.example.com, a different origin. On 0.27.2 that attaches the XSRF token header to the cross-origin request. Fixed in 1.6.0 (0.28.0 on the 0.x line). @patch-crafter this one is yours.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Msg 4: @patch-crafter acknowledges -->
+                <div class="msg-row" id="msg4">
+                  <div class="avatar avatar-agent">PC</div>
+                  <div class="msg-body">
+                    <div class="msg-header">
+                      <span class="sender-name agent-name">@patch-crafter</span>
+                      <span class="badge badge-agent">Agent</span>
+                      <span class="timestamp">10:44</span>
+                    </div>
+                    <div class="msg-text">
+                      On it. Branch fix/axios-cve-2023-45857, axios 0.27.2 -> 1.6.8.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Msg 5: @patch-crafter test runs & draft PR -->
+                <div class="msg-row" id="msg5">
+                  <div class="avatar avatar-agent">PC</div>
+                  <div class="msg-body">
+                    <div class="msg-header">
+                      <span class="sender-name agent-name">@patch-crafter</span>
+                      <span class="badge badge-agent">Agent</span>
+                      <span class="timestamp">10:53</span>
+                    </div>
+                    <div class="msg-text" style="display: flex; flex-direction: column; gap: 8px;">
+                      <div>
+                        Test run 1: 11 failed, 7 passed. SyntaxError: Cannot use import statement outside a module (axios 1.x ships ESM, our Jest is CommonJS). Fix: mapped axios to its CJS build in jest.config.js. Also replaced deprecated axios.all / axios.spread in checkout.js with Promise.all.
+                      </div>
+                      <div>
+                        Test run 2: 18 passed, 18 total. Rescan: axios advisory resolved, no new advisories. Draft PR #23, 3 files, +7 -4. @meera I need your sign-off before I mark it ready for review.
+                      </div>
+                      
+                      <!-- Interactive PR Card with Approve Button -->
+                      <div class="pr-interactive-card">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;">
+                            PR #23: Upgrade axios to 1.6.8 (fix CVE-2023-45857)
+                          </div>
+                          <span id="prStatusBadge" class="pr-status-badge status-draft">Draft #23</span>
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;">
+                          Branch: fix/axios-cve-2023-45857 · 3 files changed · +7 -4
+                        </div>
+                        <button id="btnApprovePR" class="approve-action-btn" onclick="approvePR()">
+                          Approve in Thread
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Msg 6: Meera sign-off -->
+                <div class="msg-row" id="msg6">
+                  <div class="avatar">M</div>
+                  <div class="msg-body">
+                    <div class="msg-header">
+                      <span class="sender-name">Meera</span>
+                      <span class="timestamp">10:58</span>
+                    </div>
+                    <div class="msg-text">
+                      Read the diff. Approved.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Msg 7: @patch-crafter finalize -->
+                <div class="msg-row" id="msg7">
+                  <div class="avatar avatar-agent">PC</div>
+                  <div class="msg-body">
+                    <div class="msg-header">
+                      <span class="sender-name agent-name">@patch-crafter</span>
+                      <span class="badge badge-agent">Agent</span>
+                      <span class="timestamp">10:58</span>
+                    </div>
+                    <div class="msg-text">
+                      Marked #23 ready for review and linked this thread in the description.
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <div id="typingIndicator" class="typing-indicator" style="display: none;">
+                <span>• • •</span>
+                <span id="typingAgent">@cve-analyst is analyzing call sites...</span>
+              </div>
+
+              <div class="caption-line">
+                Demo repo and sample data. The CVEs are real.
+              </div>
+            </div>
+
+            <!-- Code Evidence Panel (Side-by-side) -->
+            <div class="code-evidence-panel">
+              <div class="code-panel-header">
+                <span>src/api/client.js</span>
+                <span style="color: var(--green-text);">Line 42 highlighted</span>
+              </div>
+              <div class="code-panel-body">
+                <div class="code-line"><span class="line-no">35</span><span class="line-code">import axios from 'axios';</span></div>
+                <div class="code-line"><span class="line-no">36</span><span class="line-code">import { API_BASE_URL } from '../config';</span></div>
+                <div class="code-line"><span class="line-no">37</span><span class="line-code"></span></div>
+                <div class="code-line"><span class="line-no">38</span><span class="line-code">/**</span></div>
+                <div class="code-line"><span class="line-no">39</span><span class="line-code"> * Shared HTTP client for checkout requests</span></div>
+                <div class="code-line"><span class="line-no">40</span><span class="line-code"> */</span></div>
+                <div class="code-line"><span class="line-no">41</span><span class="line-code">export const apiClient = axios.create({</span></div>
+                <div class="code-line line-highlight"><span class="line-no">42</span><span class="line-code">  withCredentials: true, // CVE-2023-45857 trigger sink</span></div>
+                <div class="code-line"><span class="line-no">43</span><span class="line-code">  baseURL: API_BASE_URL,</span></div>
+                <div class="code-line"><span class="line-no">44</span><span class="line-code">  timeout: 10000,</span></div>
+                <div class="code-line"><span class="line-no">45</span><span class="line-code">  headers: {</span></div>
+                <div class="code-line"><span class="line-no">46</span><span class="line-code">    'Content-Type': 'application/json',</span></div>
+                <div class="code-line"><span class="line-no">47</span><span class="line-code">    'X-Requested-With': 'XMLHttpRequest'</span></div>
+                <div class="code-line"><span class="line-no">48</span><span class="line-code">  }</span></div>
+                <div class="code-line"><span class="line-no">49</span><span class="line-code">});</span></div>
+                <div class="code-line"><span class="line-no">50</span><span class="line-code"></span></div>
+                <div class="code-line"><span class="line-no">51</span><span class="line-code">// Used across 18 routes in checkout-web</span></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Section: Proof -->
+          <section class="section-proof">
+            <h2 class="section-title">Proof</h2>
+
+            <!-- Block a: Diff block -->
+            <div class="proof-block">
+              <div class="proof-header">
+                <span>The change: 3 files, +7 -4</span>
+                <span style="color: var(--text-dim);">git diff</span>
+              </div>
+              <pre class="diff-pre"><div class="diff-file-header">package.json:</div><span class="diff-del">- "axios": "^0.27.2",</span><span class="diff-add">+ "axios": "^1.6.8",</span>
+<div class="diff-file-header">jest.config.js:</div><span class="diff-add">+ moduleNameMapper: { '^axios$': 'axios/dist/browser/axios.cjs', },</span>
+<div class="diff-file-header">src/api/checkout.js:</div><span class="diff-del">- export function getCheckoutTotals(cart) {</span><span class="diff-add">+ export async function getCheckoutTotals(cart) {</span>
+<span class="diff-del">- return axios.all([getRates(cart, headers), getTax(cart, headers)])</span>
+<span class="diff-del">-   .then(axios.spread((rates, tax) => ({ rates, tax })));</span>
+<span class="diff-add">+ const [rates, tax] = await Promise.all([getRates(cart, headers), getTax(cart, headers)]);</span>
+<span class="diff-add">+ return { rates, tax };</span></pre>
+            </div>
+
+            <!-- Block b: Test Output Two-State Strip -->
+            <div class="proof-block">
+              <div class="proof-header">
+                <span>Sandbox Test Verification</span>
+                <span style="color: var(--text-dim);">Click tab to inspect runs</span>
+              </div>
+              <div class="test-strip-container">
+                <div class="test-strip-tabs">
+                  <button id="btnRun1" class="tab-btn" onclick="selectTestRun(1)">run 1 (failing)</button>
+                  <button id="btnRun2" class="tab-btn active-tab" onclick="selectTestRun(2)">run 2 (passing)</button>
+                </div>
+
+                <div id="testOutput1" class="test-output-box" style="display: none;">
+                  <div class="test-fail">FAIL src/api/checkout.test.js</div>
+                  <div style="color: #cbd5e1; margin-top: 4px;">SyntaxError: Cannot use import statement outside a module (axios 1.x ships ESM, our Jest is CommonJS).</div>
+                  <div style="color: var(--text-dim); margin-top: 8px;">Tests: 11 failed, 7 passed, 18 total</div>
+                </div>
+
+                <div id="testOutput2" class="test-output-box">
+                  <div class="test-pass">PASS src/api/checkout.test.js</div>
+                  <div class="test-pass">PASS src/api/rates.test.js</div>
+                  <div class="test-pass">PASS src/api/client.test.js</div>
+                  <div style="color: var(--text); margin-top: 8px;">Test Suites: 6 passed, 6 total / Tests: 18 passed, 18 total</div>
+                  <div style="color: var(--green-text); font-weight: 600;">Time: 0.814s · All suites green</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Block c: Triage Table -->
+            <div class="proof-block">
+              <div class="proof-header">
+                <span>Triage Table</span>
+                <span style="color: var(--text-dim);">acme/checkout-web</span>
+              </div>
+              <div class="table-container">
+                <table class="triage-table">
+                  <thead>
+                    <tr>
+                      <th>Alert</th>
+                      <th>Package</th>
+                      <th>Reachable</th>
+                      <th>Evidence</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>CVE-2023-45857</code></td>
+                      <td>axios 0.27.2</td>
+                      <td><span style="color: var(--green-text); font-weight: 700;">Yes</span></td>
+                      <td><code>client.js:42, rates.js:9</code></td>
+                      <td>Patched to 1.6.8 in PR #23</td>
+                    </tr>
+                    <tr>
+                      <td><code>CVE-2021-23337</code></td>
+                      <td>lodash 4.17.20</td>
+                      <td><span style="color: var(--text-dim);">No</span></td>
+                      <td>No template call sites in 41 files</td>
+                      <td>Deferred; bump to 4.17.21 with next routine update</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </section>
+
+        </div>
+      </main>
+
+    </div>
+
+    <!-- Shared Footer -->
+    <footer class="shared-footer">
+      <div>ZeroDay Sentry · <a href="https://github.com/roshni09mishra-0/zeroday-sentry" target="_blank" rel="noreferrer">GitHub</a> · <a href="demo-run.dc.html">Demo video</a></div>
+      <div>Built for the Flip the Switch hackathon, powered by Switch</div>
+    </footer>
+  </div>
+
+  <script>
+    // Playback state
+    let isPlaying = false;
+    let step = 7; // default final state
+    const totalSteps = 7;
+    let timer = null;
+
+    function renderStep(curStep) {
+      for (let i = 1; i <= totalSteps; i++) {
+        const el = document.getElementById('msg' + i);
+        if (el) {
+          el.style.display = i <= curStep ? 'flex' : 'none';
+        }
+      }
+    }
+
+    function togglePlay() {
+      if (isPlaying) {
+        clearInterval(timer);
+        isPlaying = false;
+        document.getElementById('btnPlay').innerText = 'Play Run';
+        document.getElementById('playbackStatus').innerText = 'Paused';
+      } else {
+        isPlaying = true;
+        document.getElementById('btnPlay').innerText = 'Pause';
+        step = 0;
+        renderStep(0);
+        document.getElementById('playbackStatus').innerText = 'Playing simulation...';
+        advanceNextStep();
+      }
+    }
+
+    function advanceNextStep() {
+      if (!isPlaying) return;
+      if (step >= totalSteps) {
+        isPlaying = false;
+        document.getElementById('btnPlay').innerText = 'Play Run';
+        document.getElementById('playbackStatus').innerText = 'Completed final state';
+        document.getElementById('typingIndicator').style.display = 'none';
+        return;
+      }
+
+      step++;
+      const indicator = document.getElementById('typingIndicator');
+      if (step === 3 || step === 4 || step === 5 || step === 7) {
+        indicator.style.display = 'flex';
+        document.getElementById('typingAgent').innerText = step === 3 ? '@cve-analyst analyzing AST...' : '@patch-crafter testing codemod...';
+        timer = setTimeout(() => {
+          indicator.style.display = 'none';
+          renderStep(step);
+          timer = setTimeout(advanceNextStep, 2200);
+        }, 1200);
+      } else {
+        indicator.style.display = 'none';
+        renderStep(step);
+        timer = setTimeout(advanceNextStep, 1800);
+      }
+    }
+
+    function restartPlay() {
+      clearInterval(timer);
+      isPlaying = false;
+      document.getElementById('btnPlay').innerText = 'Play Run';
+      document.getElementById('typingIndicator').style.display = 'none';
+      togglePlay();
+    }
+
+    function approvePR() {
+      const badge = document.getElementById('prStatusBadge');
+      badge.innerText = 'Ready for review';
+      badge.className = 'pr-status-badge status-approved';
+      const btn = document.getElementById('btnApprovePR');
+      btn.disabled = true;
+      btn.innerText = '✓ Approved by Meera';
+      btn.style.backgroundColor = '#1f2736';
+      btn.style.color = '#94a3b8';
+
+      // Ensure Msg 6 and Msg 7 are visible
+      document.getElementById('msg6').style.display = 'flex';
+      document.getElementById('msg7').style.display = 'flex';
+    }
+
+    function selectTestRun(num) {
+      if (num === 1) {
+        document.getElementById('testOutput1').style.display = 'block';
+        document.getElementById('testOutput2').style.display = 'none';
+        document.getElementById('btnRun1').className = 'tab-btn active-tab';
+        document.getElementById('btnRun2').className = 'tab-btn';
+      } else {
+        document.getElementById('testOutput1').style.display = 'none';
+        document.getElementById('testOutput2').style.display = 'block';
+        document.getElementById('btnRun1').className = 'tab-btn';
+        document.getElementById('btnRun2').className = 'tab-btn active-tab';
+      }
+    }
+
+    // Initialize in final state
+    renderStep(7);
+  </script>
+
+</body>
+</html>

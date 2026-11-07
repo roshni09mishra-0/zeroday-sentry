@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZeroDay Sentry · How It Works</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-canvas: #090b0e;
+      --bg-sidebar: #0e1117;
+      --bg-panel: #11151c;
+      --bg-hover: #161b24;
+      --border: #1e2430;
+      --border-light: #2a3344;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --text-dim: #647080;
+      --green: #10b981;
+      --green-bg: #06281e;
+      --green-border: #0f5132;
+      --green-text: #34d399;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+    a { color: inherit; text-decoration: none; }
+    .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+    
+    .app-frame {
+      max-width: 1280px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      background-color: var(--bg-canvas);
+    }
+    .main-body { display: flex; flex: 1; width: 100%; }
+
+    /* Left Sidebar */
+    .sidebar {
+      width: 250px;
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-mark { font-weight: 700; font-size: 15px; letter-spacing: -0.01em; color: var(--text); }
+    .channel-section { padding: 16px 8px; flex: 1; }
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 4px 8px 8px;
+    }
+    .channel-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+      transition: background-color 0.1s, color 0.1s;
+    }
+    .channel-link:hover { background-color: var(--bg-hover); color: var(--text); }
+    .channel-link.active { background-color: var(--bg-hover); color: var(--text); font-weight: 600; }
+    .channel-link.active .channel-hash { color: var(--green); }
+    .channel-hash { font-family: 'JetBrains Mono', monospace; color: var(--text-dim); font-size: 14px; }
+    
+    .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); }
+    .github-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background-color: #161b22;
+      border: 1px solid var(--border-light);
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      text-align: center;
+      transition: background-color 0.12s;
+    }
+    .github-item:hover { background-color: #1f242c; }
+
+    /* Content Stage */
+    .content-stage { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .channel-topbar {
+      height: 52px;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: rgba(14, 17, 23, 0.7);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .channel-title {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .channel-title span {
+      color: var(--text-muted);
+      font-weight: 400;
+      font-size: 12px;
+      margin-left: 8px;
+    }
+    .content-area {
+      padding: 32px 36px 48px;
+      max-width: 980px;
+    }
+
+    h1.page-heading {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      color: var(--text);
+      margin-bottom: 32px;
+    }
+
+    /* Vertical Thread Flow */
+    .thread-timeline {
+      position: relative;
+      margin-bottom: 48px;
+      padding-left: 20px;
+    }
+    .thread-line {
+      position: absolute;
+      top: 24px;
+      bottom: 24px;
+      left: 36px;
+      width: 2px;
+      background-color: var(--border-light);
+      z-index: 1;
+    }
+    .step-card {
+      position: relative;
+      z-index: 2;
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .step-card:hover {
+      border-color: #2e3848;
+    }
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+      background-color: #1d2430;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .avatar-bot { background-color: #1e2838; color: #93c5fd; }
+    .avatar-agent { background-color: var(--green-bg); color: var(--green-text); border: 1px solid var(--green-border); }
+    .avatar-human { background-color: #272138; color: #d8b4fe; border: 1px solid #493b68; }
+
+    .step-content { flex: 1; min-width: 0; }
+    .step-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+    .step-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-dim);
+    }
+    .actor-name {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .actor-name.agent-name { color: var(--green-text); }
+    .badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+    .badge-bot { background-color: #1e2838; color: #93c5fd; border: 1px solid #2d3d54; }
+    .badge-agent { background-color: var(--green-bg); color: var(--green-text); border: 1px solid var(--green-border); }
+    .badge-human { background-color: #272138; color: #d8b4fe; border: 1px solid #493b68; }
+
+    .step-desc {
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .evidence-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background-color: #0c0f14;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+    .chip-label {
+      color: var(--text-dim);
+      font-size: 11px;
+    }
+
+    /* Table */
+    .table-container {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow-x: auto;
+      margin-bottom: 48px;
+    }
+    table.works-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+    table.works-table th {
+      padding: 12px 16px;
+      background-color: #141923;
+      border-bottom: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    table.works-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    table.works-table tr:last-child td { border-bottom: none; }
+    table.works-table td strong { color: var(--text); }
+    table.works-table td code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background-color: #0b0e14;
+      padding: 2px 6px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: #cbd5e1;
+    }
+
+    /* Pinned Room Rules */
+    .room-rules-panel {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 20px 24px;
+      margin-bottom: 48px;
+    }
+    .rules-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+    .pin-icon {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .rules-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .rules-list li {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .rules-list li::before {
+      content: "•";
+      color: var(--text-dim);
+      font-weight: bold;
+    }
+
+    /* Section: Built on Switch */
+    .section-switch {
+      border-top: 1px solid var(--border);
+      padding-top: 40px;
+      margin-bottom: 48px;
+    }
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .switch-desc {
+      font-size: 14.5px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 780px;
+      margin-bottom: 28px;
+    }
+
+    /* Room Diagram (Placed Elements, No SVG) */
+    .room-diagram-container {
+      background-color: #0b0e14;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 28px 24px;
+      position: relative;
+      margin-bottom: 32px;
+    }
+    .room-label-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      border-bottom: 1px dashed var(--border);
+      padding-bottom: 8px;
+    }
+    .room-label-tag {
+      padding: 2px 8px;
+      background-color: #171d27;
+      border: 1px solid var(--border-light);
+      border-radius: 4px;
+      color: var(--text);
+      font-weight: 600;
+    }
+    .room-boxes-grid {
+      display: grid;
+      grid-cols: 1;
+      gap: 14px;
+    }
+    @media (min-width: 640px) {
+      .room-boxes-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    .actor-box {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: center;
+    }
+    .actor-box.box-agent {
+      border-color: var(--green-border);
+      background-color: #0a1714;
+    }
+    .actor-box-title {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .actor-box.box-agent .actor-box-title {
+      color: var(--green-text);
+    }
+    .actor-box-role {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .switch-connector-bar {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #111722;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .switch-connector-bar strong {
+      color: var(--text);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.12s;
+    }
+    .btn-primary { background-color: var(--green); color: #041b12; }
+    .btn-primary:hover { background-color: #0fa472; }
+    .btn-secondary { background-color: #161b22; border-color: var(--border-light); color: var(--text); }
+    .btn-secondary:hover { background-color: #1f242c; }
+
+    /* Footer */
+    footer.shared-footer {
+      border-top: 1px solid var(--border);
+      padding: 16px 24px;
+      font-size: 12px;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      background-color: var(--bg-sidebar);
+    }
+    footer a { color: var(--text-muted); text-decoration: underline; text-underline-offset: 3px; }
+    footer a:hover { color: var(--text); }
+
+    @media (max-width: 768px) {
+      .main-body { flex-direction: column; }
+      .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+      .sidebar-header { justify-content: space-between; }
+      .channel-section { display: flex; overflow-x: auto; padding: 8px 12px; gap: 6px; }
+      .section-label { display: none; }
+      .channel-link { white-space: nowrap; margin-bottom: 0; padding: 6px 10px; }
+      .sidebar-footer { display: none; }
+      .content-area { padding: 24px 16px; }
+      h1.page-heading { font-size: 24px; }
+      .thread-timeline { padding-left: 0; }
+      .thread-line { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-frame">
+    <div class="main-body">
+      
+      <!-- Left Sidebar (Channels) -->
+      <aside class="sidebar">
+        <div>
+          <div class="sidebar-header">
+            <span class="brand-mark">ZeroDay Sentry</span>
+          </div>
+
+          <div class="channel-section">
+            <div class="section-label">Channels</div>
+            <a href="index.dc.html" class="channel-link">
+              <span class="channel-hash">#</span>
+              <span>home</span>
+            </a>
+            <a href="how-it-works.dc.html" class="channel-link active">
+              <span class="channel-hash">#</span>
+              <span>how-it-works</span>
+              <span style="width: 6px; height: 6px; border-radius: 50%; background-color: var(--green); margin-left: auto;"></span>
+            </a>
+            <a href="demo-run.dc.html" class="channel-link">
+              <span class="channel-hash">#</span>
+              <span>demo-run</span>
+            </a>
+            <a href="faq.dc.html" class="channel-link">
+              <span class="channel-hash">#</span>
+              <span>faq</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="https://github.com/roshni09mishra-0/zeroday-sentry" target="_blank" rel="noreferrer" class="github-item">
+            <span>GitHub Repository</span>
+          </a>
+        </div>
+      </aside>
+
+      <!-- Main Stage Content Area -->
+      <main class="content-stage">
+        
+        <!-- Channel Topbar -->
+        <header class="channel-topbar">
+          <div class="channel-title">
+            <span class="channel-hash font-mono">#</span>
+            <strong>how-it-works</strong>
+            <span>security-war-room · workflow specification</span>
+          </div>
+          <a href="https://github.com/roshni09mishra-0/zeroday-sentry" target="_blank" rel="noreferrer" class="btn btn-secondary" style="padding: 5px 12px; font-size: 12px;">
+            GitHub
+          </a>
+        </header>
+
+        <!-- Page Body Content -->
+        <div class="content-area">
+          <h1 class="page-heading">Four steps, one thread. Each agent posts evidence, not just a verdict.</h1>
+
+          <!-- Four Steps Vertical Thread -->
+          <div class="thread-timeline">
+            <div class="thread-line"></div>
+
+            <!-- Step 1: Alert -->
+            <div class="step-card">
+              <div class="avatar avatar-bot">1</div>
+              <div class="step-content">
+                <div class="step-top">
+                  <span class="step-num">STEP 1</span>
+                  <span class="actor-name">Scanner (Dependabot, Snyk)</span>
+                  <span class="badge badge-bot">bot</span>
+                </div>
+                <div class="step-desc">
+                  Alert lands in #security-war-room
+                </div>
+                <div class="evidence-chip">
+                  <span class="chip-label">posts:</span>
+                  <span>CVE id, package, severity</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: Reachability -->
+            <div class="step-card">
+              <div class="avatar avatar-agent">2</div>
+              <div class="step-content">
+                <div class="step-top">
+                  <span class="step-num">STEP 2</span>
+                  <span class="actor-name agent-name">@cve-analyst</span>
+                  <span class="badge badge-agent">Agent</span>
+                </div>
+                <div class="step-desc">
+                  Searches imports and call sites for the vulnerable function or setting. Read-only.
+                </div>
+                <div class="evidence-chip">
+                  <span class="chip-label">posts:</span>
+                  <span>file:line, or "no call sites found" and what it searched</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3: Patch -->
+            <div class="step-card">
+              <div class="avatar avatar-agent">3</div>
+              <div class="step-content">
+                <div class="step-top">
+                  <span class="step-num">STEP 3</span>
+                  <span class="actor-name agent-name">@patch-crafter</span>
+                  <span class="badge badge-agent">Agent</span>
+                </div>
+                <div class="step-desc">
+                  Branches, upgrades, fixes breaking changes, runs tests, rescans
+                </div>
+                <div class="evidence-chip">
+                  <span class="chip-label">posts:</span>
+                  <span>diff, test counts, rescan result</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4: Approval -->
+            <div class="step-card">
+              <div class="avatar avatar-human">4</div>
+              <div class="step-content">
+                <div class="step-top">
+                  <span class="step-num">STEP 4</span>
+                  <span class="actor-name">Lead developer</span>
+                  <span class="badge badge-human">Human</span>
+                </div>
+                <div class="step-desc">
+                  Reads the diff in the thread and approves
+                </div>
+                <div class="evidence-chip">
+                  <span class="chip-label">posts:</span>
+                  <span>a named human "Approved"</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Structured Summary Table -->
+          <div class="table-container">
+            <table class="works-table">
+              <thead>
+                <tr>
+                  <th>Step</th>
+                  <th>Who</th>
+                  <th>What happens</th>
+                  <th>What it posts</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>1 Alert</strong></td>
+                  <td>Scanner (Dependabot, Snyk)</td>
+                  <td>Alert lands in #security-war-room</td>
+                  <td><code>CVE id, package, severity</code></td>
+                </tr>
+                <tr>
+                  <td><strong>2 Reachability</strong></td>
+                  <td><span style="color: var(--green-text); font-weight: 600;">@cve-analyst</span></td>
+                  <td>Searches imports and call sites for the vulnerable function or setting. Read-only.</td>
+                  <td><code>file:line</code>, or "no call sites found" and what it searched</td>
+                </tr>
+                <tr>
+                  <td><strong>3 Patch</strong></td>
+                  <td><span style="color: var(--green-text); font-weight: 600;">@patch-crafter</span></td>
+                  <td>Branches, upgrades, fixes breaking changes, runs tests, rescans</td>
+                  <td><code>diff</code>, <code>test counts</code>, <code>rescan result</code></td>
+                </tr>
+                <tr>
+                  <td><strong>4 Approval</strong></td>
+                  <td>Lead developer</td>
+                  <td>Reads the diff in the thread and approves</td>
+                  <td>a named human "Approved"</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pinned Message: Room Rules -->
+          <div class="room-rules-panel">
+            <div class="rules-header">
+              <span class="pin-icon font-mono">📌</span>
+              <span>Room rules</span>
+            </div>
+            <ul class="rules-list">
+              <li>@cve-analyst never edits files.</li>
+              <li>@patch-crafter works on a branch and never merges.</li>
+              <li>An unreachable alert is closed with a written reason.</li>
+              <li>If tests still fail after 3 attempts, the agent stops and posts the failing output.</li>
+            </ul>
+          </div>
+
+          <!-- Section: Built on Switch -->
+          <section class="section-switch">
+            <h2 class="section-title">Built on Switch</h2>
+            <p class="switch-desc">
+              Each channel is a room. Both agents are ordinary coding-agent sessions (Claude Code, Codex or OpenCode) given a role and instructions, and they join the room like teammates. The approval step is a person in the same thread.
+            </p>
+
+            <!-- Room Diagram: Placed Elements -->
+            <div class="room-diagram-container">
+              <div class="room-label-bar">
+                <span>ROOM CONTAINER (#security-war-room)</span>
+                <span class="room-label-tag">Switch Context Protocol</span>
+              </div>
+
+              <div class="room-boxes-grid">
+                <div class="actor-box">
+                  <div class="actor-box-title">Scanner</div>
+                  <div class="actor-box-role">Dependabot / Snyk</div>
+                </div>
+
+                <div class="actor-box box-agent">
+                  <div class="actor-box-title">@cve-analyst</div>
+                  <div class="actor-box-role">Read-only AST Agent</div>
+                </div>
+
+                <div class="actor-box box-agent">
+                  <div class="actor-box-title">@patch-crafter</div>
+                  <div class="actor-box-role">Branch &amp; Test Agent</div>
+                </div>
+
+                <div class="actor-box">
+                  <div class="actor-box-title">Lead Developer</div>
+                  <div class="actor-box-role">Human-in-the-Loop</div>
+                </div>
+              </div>
+
+              <div class="switch-connector-bar">
+                Connected by <strong>Switch Room Protocol</strong> (declarative flows · shared memory · thread events)
+              </div>
+            </div>
+
+            <a href="demo-run.dc.html" class="btn btn-primary">
+              See a real run
+            </a>
+          </section>
+
+        </div>
+      </main>
+
+    </div>
+
+    <!-- Shared Footer -->
+    <footer class="shared-footer">
+      <div>ZeroDay Sentry · <a href="https://github.com/roshni09mishra-0/zeroday-sentry" target="_blank" rel="noreferrer">GitHub</a> · <a href="demo-run.dc.html">Demo video</a></div>
+      <div>Built for the Flip the Switch hackathon, powered by Switch</div>
+    </footer>
+  </div>
+
+</body>
+</html>

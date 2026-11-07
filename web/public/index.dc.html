@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZeroDay Sentry · Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-canvas: #090b0e;
+      --bg-sidebar: #0e1117;
+      --bg-panel: #11151c;
+      --bg-hover: #161b24;
+      --border: #1e2430;
+      --border-light: #2a3344;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --text-dim: #647080;
+      --green: #10b981;
+      --green-bg: #06281e;
+      --green-border: #0f5132;
+      --green-text: #34d399;
+      --red: #ef4444;
+      --red-bg: #281014;
+      --red-border: #5a1f26;
+      --red-text: #f87171;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+    }
+    /* Main Layout Frame */
+    .app-frame {
+      max-width: 1280px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      background-color: var(--bg-canvas);
+    }
+    .main-body {
+      display: flex;
+      flex: 1;
+      width: 100%;
+    }
+    /* Left Sidebar */
+    .sidebar {
+      width: 250px;
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-mark {
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+    .channel-section {
+      padding: 16px 8px;
+      flex: 1;
+    }
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 4px 8px 8px;
+    }
+    .channel-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+      transition: background-color 0.1s, color 0.1s;
+    }
+    .channel-link:hover {
+      background-color: var(--bg-hover);
+      color: var(--text);
+    }
+    .channel-link.active {
+      background-color: var(--bg-hover);
+      color: var(--text);
+      font-weight: 600;
+    }
+    .channel-link.active .channel-hash {
+      color: var(--green);
+    }
+    .channel-hash {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-dim);
+      font-size: 14px;
+    }
+    .unread-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--green);
+      margin-left: auto;
+    }
+    .sidebar-footer {
+      padding: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .github-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background-color: #161b22;
+      border: 1px solid var(--border-light);
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      text-align: center;
+      transition: background-color 0.12s;
+    }
+    .github-item:hover {
+      background-color: #1f242c;
+    }
+    /* Content Column */
+    .content-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .channel-topbar {
+      height: 52px;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: rgba(14, 17, 23, 0.7);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .channel-title {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .channel-title span {
+      color: var(--text-muted);
+      font-weight: 400;
+      font-size: 12px;
+      margin-left: 8px;
+    }
+    .content-area {
+      padding: 32px 36px 48px;
+      max-width: 980px;
+    }
+    /* Page Specific Elements */
+    .eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+    h1.hero-headline {
+      font-size: 38px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    p.subhead {
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text-muted);
+      max-width: 760px;
+      margin-bottom: 24px;
+    }
+    .btn-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.12s;
+    }
+    .btn-primary {
+      background-color: var(--green);
+      color: #041b12;
+    }
+    .btn-primary:hover {
+      background-color: #0fa472;
+    }
+    .btn-secondary {
+      background-color: #161b22;
+      border-color: var(--border-light);
+      color: var(--text);
+    }
+    .btn-secondary:hover {
+      background-color: #1f242c;
+    }
+    .trust-line {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-dim);
+      border-left: 2px solid var(--border-light);
+      padding-left: 14px;
+      margin-bottom: 40px;
+    }
+    /* Chat Room Mock (Hero Visual) */
+    .chat-mock-container {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 48px;
+      overflow: hidden;
+    }
+    .chat-mock-header {
+      padding: 10px 16px;
+      background-color: #141923;
+      border-bottom: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .chat-feed {
+      padding: 20px 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .msg-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+      background-color: #1d2430;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .avatar-bot {
+      background-color: #1e2838;
+      color: #93c5fd;
+    }
+    .avatar-agent {
+      background-color: var(--green-bg);
+      color: var(--green-text);
+      border: 1px solid var(--green-border);
+    }
+    .msg-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .msg-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .sender-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .sender-name.agent-name {
+      color: var(--green-text);
+    }
+    .badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+    .badge-bot {
+      background-color: #1e2838;
+      color: #93c5fd;
+      border: 1px solid #2d3d54;
+    }
+    .badge-agent {
+      background-color: var(--green-bg);
+      color: var(--green-text);
+      border: 1px solid var(--green-border);
+    }
+    .timestamp {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .msg-text {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+    .code-box {
+      margin-top: 8px;
+      background-color: #0b0e14;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #d1d7e0;
+    }
+    .verdict-line {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .tag-unreachable {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background-color: #1a1e27;
+      color: #7d8590;
+      border: 1px solid #272e3b;
+      font-weight: 600;
+      font-size: 11px;
+    }
+    .tag-reachable {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background-color: var(--green-bg);
+      color: var(--green-text);
+      border: 1px solid var(--green-border);
+      font-weight: 600;
+      font-size: 11px;
+    }
+    @keyframes softPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.75; }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .pulse-once {
+        animation: softPulse 2s ease-in-out 1;
+      }
+    }
+    .caption-line {
+      padding: 8px 16px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      background-color: #0d1016;
+    }
+
+    /* Section: The Problem */
+    .section-problem {
+      margin-bottom: 56px;
+      border-top: 1px solid var(--border);
+      padding-top: 40px;
+    }
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .lead-text {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .problem-pile {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .pile-card {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .pile-card.highlighted-unread {
+      border-color: #3b4556;
+      background-color: #141924;
+      position: relative;
+    }
+    .pile-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-dim);
+      padding-top: 2px;
+    }
+    .pile-body h4 {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .pile-body p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .unread-badge {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #94a3b8;
+      background-color: #1e2634;
+      padding: 1px 6px;
+      border-radius: 3px;
+      margin-left: 8px;
+    }
+    .closing-text {
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--text);
+      font-weight: 500;
+      border-left: 2px solid var(--green);
+      padding-left: 14px;
+      margin-bottom: 48px;
+    }
+    .bottom-cta {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .bottom-cta p {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    /* Shared Footer */
+    footer.shared-footer {
+      border-top: 1px solid var(--border);
+      padding: 16px 24px;
+      font-size: 12px;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      background-color: var(--bg-sidebar);
+    }
+    footer a {
+      color: var(--text-muted);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    footer a:hover {
+      color: var(--text);
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .main-body {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .sidebar-header {
+        justify-content: space-between;
+      }
+      .channel-section {
+        display: flex;
+        overflow-x: auto;
+        padding: 8px 12px;
+        gap: 6px;
+      }
+      .section-label {
+        display: none;
+      }
+      .channel-link {
+        white-space: nowrap;
+        margin-bottom: 0;
+        padding: 6px 10px;
+      }
+      .sidebar-footer {
+        display: none;
+      }
+      .content-area {
+        padding: 24px 16px;
+      }
+      h1.hero-headline {
+        font-size: 28px;
+      }
+      .channel-topbar {
+        padding: 0 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-frame">
+    <div class="main-body">
+      
+      <!-- Left Sidebar (Channels) -->
+      <aside class="sidebar">
+        <div>
+          <div class="sidebar-header">
+            <span class="brand-mark">ZeroDay Sentry</span>
+          </div>
+
+          <div class="channel-section">
+            <div class="section-label">Channels</div>
+            <a href="index.dc.html" class="channel-link active">
+              <span class="channel-hash">#</span>
+              <span>home</span>
+              <span class="unread-dot"></span>
+            </a>
+            <a href="how-it-works.dc.html" class="channel-link">
+              <span class="channel-hash">#</span>
+              <span>how-it-works</span>
+            </a>
+            <a href="demo-run.dc.html" class="channel-link">
+              <span class="channel-hash">#</span>
+              <span>demo-run</span>
+            </a>
+            <a href="faq.dc.html" class="channel-link">
+              <span class="channel-hash">#</span>
+              <span>faq</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="https://github.com/roshni09mishra-0/zeroday-sentry" target="_blank" rel="noreferrer" class="github-item">
+            <span>GitHub Repository</span>
+          </a>
+        </div>
+      </aside>
+
+      <!-- Main Stage Content Area -->
+      <main class="content-stage">
+        
+        <!-- Channel Topbar -->
+        <header class="channel-topbar">
+          <div class="channel-title">
+            <span class="channel-hash font-mono">#</span>
+            <strong>home</strong>
+            <span>security-war-room · acme/checkout-web</span>
+          </div>
+          <a href="https://github.com/roshni09mishra-0/zeroday-sentry" target="_blank" rel="noreferrer" class="btn btn-secondary" style="padding: 5px 12px; font-size: 12px;">
+            GitHub
+          </a>
+        </header>
+
+        <!-- Page Body Content -->
+        <div class="content-area">
+          <span class="eyebrow">Built on Switch · works in Slack, Teams, Discord and Mattermost</span>
+          
+          <h1 class="hero-headline">Don't patch every alert. Patch the one your code actually calls.</h1>
+          
+          <p class="subhead">ZeroDay Sentry puts two AI agents in your security channel. One reads your code to check whether a flagged CVE is reachable. The other upgrades the package, fixes what breaks, runs your tests and rescans. A lead developer approves in the thread.</p>
+
+          <div class="btn-row">
+            <a href="demo-run.dc.html" class="btn btn-primary">See a real run</a>
+            <a href="https://github.com/roshni09mishra-0/zeroday-sentry" target="_blank" rel="noreferrer" class="btn btn-secondary">Clone the repo</a>
+          </div>
+
+          <div class="trust-line">
+            Open source. Runs on your machine. Works with the coding agent you already use. Nothing is marked ready for review until a human says yes.
+          </div>
+
+          <!-- Hero Visual: First 3 Messages of Chat Room -->
+          <div class="chat-mock-container">
+            <div class="chat-mock-header">
+              <span>#security-war-room</span>
+              <span>acme/checkout-web</span>
+            </div>
+
+            <div class="chat-feed">
+              
+              <!-- Message 1: Dependabot Alert -->
+              <div class="msg-row">
+                <div class="avatar avatar-bot">DB</div>
+                <div class="msg-body">
+                  <div class="msg-header">
+                    <span class="sender-name">Dependabot</span>
+                    <span class="badge badge-bot">bot</span>
+                    <span class="timestamp">10:42</span>
+                  </div>
+                  <div class="msg-text">
+                    2 new alerts on acme/checkout-web
+                  </div>
+                  <div class="code-box">
+                    • axios 0.27.2 CVE-2023-45857 Medium (6.5)<br>
+                    • lodash 4.17.20 CVE-2021-23337 High (7.2)
+                  </div>
+                </div>
+              </div>
+
+              <!-- Message 2: Meera (lead dev) -->
+              <div class="msg-row">
+                <div class="avatar">M</div>
+                <div class="msg-body">
+                  <div class="msg-header">
+                    <span class="sender-name">Meera</span>
+                    <span class="timestamp">10:42</span>
+                  </div>
+                  <div class="msg-text">
+                    @cve-analyst are these real for us?
+                  </div>
+                </div>
+              </div>
+
+              <!-- Message 3: @cve-analyst verdict -->
+              <div class="msg-row">
+                <div class="avatar avatar-agent">CA</div>
+                <div class="msg-body">
+                  <div class="msg-header">
+                    <span class="sender-name agent-name">@cve-analyst</span>
+                    <span class="badge badge-agent">Agent</span>
+                    <span class="timestamp">10:43</span>
+                  </div>
+                  <div class="msg-text verdict-line">
+                    <div>
+                      <span class="tag-unreachable font-mono">NOT REACHABLE</span>
+                      <span style="color: var(--text-muted); margin-left: 6px;">lodash: The flaw is in _.template. lodash is imported in 6 files and we use debounce, get and isEqual.</span>
+                    </div>
+                    <div>
+                      <span class="tag-reachable font-mono pulse-once">REACHABLE</span>
+                      <strong style="color: var(--text); margin-left: 6px;">axios at src/api/client.js:42</strong>
+                      <span style="color: var(--text-muted); margin-left: 4px;">creates the shared instance with withCredentials: true, attaches token to cross-origin request.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="caption-line">
+              Demo repo and sample data. The CVEs are real.
+            </div>
+          </div>
+
+          <!-- Section: The Problem -->
+          <section class="section-problem">
+            <h2 class="section-title">The problem</h2>
+            <p class="lead-text">Scanners match version numbers, not call paths. That is why most alerts are noise and a few are real.</p>
+
+            <div class="problem-pile">
+              <div class="pile-card">
+                <div class="pile-num">01</div>
+                <div class="pile-body">
+                  <h4>Alerts say "vulnerable", not "used".</h4>
+                  <p>A flagged package may never call the broken function. In Sentry's demo repo, 2 alerts arrive and only 1 is reachable.</p>
+                </div>
+              </div>
+
+              <div class="pile-card">
+                <div class="pile-num">02</div>
+                <div class="pile-body">
+                  <h4>Upgrades break things.</h4>
+                  <p>Moving axios from 0.27 to 1.x makes a CommonJS Jest setup fail with "Cannot use import statement outside a module", because 1.x ships ES modules.</p>
+                </div>
+              </div>
+
+              <div class="pile-card highlighted-unread">
+                <div class="pile-num">03</div>
+                <div class="pile-body">
+                  <h4>So alerts wait. <span class="unread-badge">Nobody reads this</span></h4>
+                  <p>The one real alert sits in the same list as the noise, and nobody owns checking it.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="closing-text">
+              Sentry answers two questions in the channel where the team already talks: do we call it, and can we upgrade without breaking anything?
+            </div>
+
+            <div class="bottom-cta">
+              <p>Bring the agents you already use. Clone the repo and run your first alert in about ten minutes.</p>
+              <a href="https://github.com/roshni09mishra-0/zeroday-sentry" target="_blank" rel="noreferrer" class="btn btn-secondary">
+                Clone the repo
+              </a>
+            </div>
+          </section>
+
+        </div>
+      </main>
+
+    </div>
+
+    <!-- Shared Footer -->
+    <footer class="shared-footer">
+      <div>ZeroDay Sentry · <a href="https://github.com/roshni09mishra-0/zeroday-sentry" target="_blank" rel="noreferrer">GitHub</a> · <a href="demo-run.dc.html">Demo video</a></div>
+      <div>Built for the Flip the Switch hackathon, powered by Switch</div>
+    </footer>
+  </div>
+
+</body>
+</html>

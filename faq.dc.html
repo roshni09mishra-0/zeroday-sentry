@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZeroDay Sentry · FAQ and Get Started</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-canvas: #090b0e;
+      --bg-sidebar: #0e1117;
+      --bg-panel: #11151c;
+      --bg-hover: #161b24;
+      --border: #1e2430;
+      --border-light: #2a3344;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --text-dim: #647080;
+      --green: #10b981;
+      --green-bg: #06281e;
+      --green-border: #0f5132;
+      --green-text: #34d399;
+      --red: #ef4444;
+      --red-bg: #281014;
+      --red-border: #5a1f26;
+      --red-text: #f87171;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+    }
+    /* Main Layout Frame */
+    .app-frame {
+      max-width: 1280px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      background-color: var(--bg-canvas);
+    }
+    .main-body {
+      display: flex;
+      flex: 1;
+      width: 100%;
+    }
+    /* Left Sidebar */
+    .sidebar {
+      width: 250px;
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-mark {
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+    .channel-section {
+      padding: 16px 8px;
+      flex: 1;
+    }
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 4px 8px 8px;
+    }
+    .channel-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 4px;
+      color: var(--text-muted);
+      font-size: 13.5px;
+      font-weight: 500;
+      margin-bottom: 2px;
+      transition: background-color 0.12s, color 0.12s;
+    }
+    .channel-link:hover {
+      background-color: var(--bg-hover);
+      color: var(--text);
+    }
+    .channel-link.active {
+      background-color: #1a2230;
+      color: #ffffff;
+      font-weight: 600;
+    }
+    .channel-hash {
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+    }
+    .channel-link.active .channel-hash {
+      color: var(--green);
+    }
+    .sidebar-footer {
+      padding: 14px 16px;
+      border-top: 1px solid var(--border);
+    }
+    .github-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background-color: var(--bg-panel);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .github-item:hover {
+      color: var(--text);
+      border-color: var(--border-light);
+    }
+
+    /* Main Content Stage */
+    .content-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background-color: var(--bg-canvas);
+    }
+    .channel-topbar {
+      height: 52px;
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: var(--bg-canvas);
+    }
+    .channel-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+    .channel-title strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+    .channel-title span {
+      color: var(--text-dim);
+      font-size: 12px;
+      margin-left: 8px;
+    }
+    .content-area {
+      padding: 40px 36px 60px;
+      max-width: 960px;
+      width: 100%;
+    }
+
+    /* Typography & Headers */
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--green);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 12px;
+    }
+    h1.page-heading {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .page-subhead {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 36px;
+      max-width: 780px;
+    }
+
+    /* FAQ Accordion List */
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 60px;
+    }
+    .faq-item {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+    .faq-item:hover {
+      border-color: #2b3647;
+    }
+    .faq-item.is-open {
+      border-color: #313d52;
+    }
+    .faq-question-btn {
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 18px 20px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      color: var(--text);
+    }
+    .faq-question-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .faq-q-indicator {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--green-text);
+      background-color: var(--green-bg);
+      border: 1px solid var(--green-border);
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .faq-question-title {
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.4;
+      color: var(--text);
+    }
+    .faq-toggle-icon {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      color: var(--text-dim);
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+    .faq-item.is-open .faq-toggle-icon {
+      transform: rotate(45deg);
+      color: var(--green-text);
+    }
+    .faq-answer-panel {
+      padding: 0 20px 20px 56px;
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--text-muted);
+      border-top: 1px solid transparent;
+    }
+    .faq-item.is-open .faq-answer-panel {
+      border-top-color: #171d26;
+      padding-top: 14px;
+    }
+    .faq-answer-panel strong {
+      color: var(--text);
+    }
+    .faq-answer-panel code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      background-color: #0c0f14;
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      color: var(--green-text);
+    }
+
+    /* Section Get Started */
+    .get-started-box {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 32px;
+      position: relative;
+    }
+    .get-started-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+    }
+    .get-started-lead {
+      font-size: 14.5px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 24px;
+      max-width: 680px;
+    }
+    .terminal-block {
+      background-color: #06080b;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .terminal-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13.5px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow-x: auto;
+    }
+    .terminal-prompt {
+      color: var(--green);
+      user-select: none;
+    }
+    .copy-btn {
+      background-color: #141a24;
+      border: 1px solid var(--border-light);
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .copy-btn:hover {
+      background-color: #1d2533;
+      color: var(--text);
+      border-color: #3b475d;
+    }
+    .copy-btn.copied {
+      background-color: var(--green-bg);
+      border-color: var(--green-border);
+      color: var(--green-text);
+    }
+    .terminal-sub {
+      font-size: 11.5px;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: -16px;
+      margin-bottom: 24px;
+      padding-left: 4px;
+    }
+
+    .cta-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.12s;
+    }
+    .btn-primary {
+      background-color: var(--green);
+      color: #041b12;
+    }
+    .btn-primary:hover {
+      background-color: #0fa472;
+    }
+    .btn-secondary {
+      background-color: #161b22;
+      border-color: var(--border-light);
+      color: var(--text);
+    }
+    .btn-secondary:hover {
+      background-color: #1f242c;
+    }
+
+    /* Modal / Alert Dialog for Video */
+    .video-dialog-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .video-dialog-overlay.active {
+      display: flex;
+    }
+    .video-modal-card {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      max-width: 540px;
+      width: 100%;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+    }
+    .video-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .video-modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .video-modal-close {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 18px;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .video-modal-close:hover {
+      color: var(--text);
+    }
+
+    /* Shared Footer */
+    footer.shared-footer {
+      border-top: 1px solid var(--border);
+      padding: 16px 24px;
+      font-size: 12px;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      background-color: var(--bg-sidebar);
+    }
+    footer a {
+      color: var(--text-muted);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    footer a:hover {
+      color: var(--text);
+    }
+
+    @media (max-width: 768px) {
+      .main-body {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .sidebar-header {
+        justify-content: space-between;
+      }
+      .channel-section {
+        display: flex;
+        overflow-x: auto;
+        padding: 8px 12px;
+        gap: 6px;
+      }
+      .section-label {
+        display: none;
+      }
+      .channel-link {
+        white-space: nowrap;
+        margin-bottom: 0;
+        padding: 6px 10px;
+      }
+      .sidebar-footer {
+        display: none;
+      }
+      .content-area {
+        padding: 24px 16px;
+      }
+      h1.page-heading {
+        font-size: 24px;
+      }
+      .faq-answer-panel {
+        padding-left: 20px;
+      }
+      .terminal-block {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .copy-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-frame">
+    <div class="main-body">
+      
+      <!-- Left Sidebar (Channels) -->
+      <aside class="sidebar">
+        <div>
+          <div class="sidebar-header">
+            <span class="brand-mark">ZeroDay Sentry</span>
+          </div>
+
+          <div class="channel-section">
+            <div class="section-label">Channels</div>
+            <a href="index.dc.html" class="channel-link">
+              <span class="channel-hash">#</span>
+              <span>home</span>
+            </a>
+            <a href="how-it-works.dc.html" class="channel-link">
+              <span class="channel-hash">#</span>
+              <span>how-it-works</span>
+            </a>
+            <a href="demo-run.dc.html" class="channel-link">
+              <span class="channel-hash">#</span>
+              <span>demo-run</span>
+            </a>
+            <a href="faq.dc.html" class="channel-link active">
+              <span class="channel-hash">#</span>
+              <span>faq</span>
+              <span style="width: 6px; height: 6px; border-radius: 50%; background-color: var(--green); margin-left: auto;"></span>
+            </a>
+          </div>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="https://github.com/roshni09mishra-0/zeroday-sentry" target="_blank" rel="noreferrer" class="github-item">
+            <span>GitHub Repository</span>
+          </a>
+        </div>
+      </aside>
+
+      <!-- Main Stage Content Area -->
+      <main class="content-stage">
+        
+        <!-- Channel Topbar -->
+        <header class="channel-topbar">
+          <div class="channel-title">
+            <span class="channel-hash font-mono">#</span>
+            <strong>faq</strong>
+            <span>security-war-room · knowledgebase & setup</span>
+          </div>
+          <a href="https://github.com/roshni09mishra-0/zeroday-sentry" target="_blank" rel="noreferrer" class="btn btn-secondary" style="padding: 5px 12px; font-size: 12px;">
+            GitHub
+          </a>
+        </header>
+
+        <!-- Page Body Content -->
+        <div class="content-area">
+          
+          <div class="eyebrow">Documentation & Technical Answers</div>
+          <h1 class="page-heading">Questions, answered honestly</h1>
+          <p class="page-subhead">
+            No marketing qualifiers. How reachability is evaluated, where analysis limits exist, what human guardrails apply, and how local agents execute on Switch.
+          </p>
+
+          <!-- FAQ Accordion List -->
+          <div class="faq-list">
+            
+            <!-- Item 1 -->
+            <div class="faq-item is-open" id="faq-1">
+              <button class="faq-question-btn" onclick="toggleFaq('faq-1')" aria-expanded="true">
+                <div class="faq-question-left">
+                  <div class="faq-q-indicator">Q</div>
+                  <span class="faq-question-title">How does it decide an alert is reachable?</span>
+                </div>
+                <span class="faq-toggle-icon">+</span>
+              </button>
+              <div class="faq-answer-panel">
+                It searches your source for imports and call sites of the function or setting the advisory names, and posts the file and line as evidence. It is a code search plus the agent's reading of it, not a full program analysis.
+              </div>
+            </div>
+
+            <!-- Item 2 -->
+            <div class="faq-item" id="faq-2">
+              <button class="faq-question-btn" onclick="toggleFaq('faq-2')" aria-expanded="false">
+                <div class="faq-question-left">
+                  <div class="faq-q-indicator">Q</div>
+                  <span class="faq-question-title">What can it miss?</span>
+                </div>
+                <span class="faq-toggle-icon">+</span>
+              </button>
+              <div class="faq-answer-panel">
+                Calls made through dynamic names, and vulnerable code reached only through a transitive dependency. Then the analyst says "cannot confirm" and asks a human.
+              </div>
+            </div>
+
+            <!-- Item 3 -->
+            <div class="faq-item" id="faq-3">
+              <button class="faq-question-btn" onclick="toggleFaq('faq-3')" aria-expanded="false">
+                <div class="faq-question-left">
+                  <div class="faq-q-indicator">Q</div>
+                  <span class="faq-question-title">What if the upgrade breaks the tests?</span>
+                </div>
+                <span class="faq-toggle-icon">+</span>
+              </button>
+              <div class="faq-answer-panel">
+                <code>@patch-crafter</code> tries a fix up to 3 times. If tests still fail it stops and posts the output. It never merges.
+              </div>
+            </div>
+
+            <!-- Item 4 -->
+            <div class="faq-item" id="faq-4">
+              <button class="faq-question-btn" onclick="toggleFaq('faq-4')" aria-expanded="false">
+                <div class="faq-question-left">
+                  <div class="faq-q-indicator">Q</div>
+                  <span class="faq-question-title">Can it merge by itself?</span>
+                </div>
+                <span class="faq-toggle-icon">+</span>
+              </button>
+              <div class="faq-answer-panel">
+                No. It opens a draft pull request and asks a named person for sign-off in the thread.
+              </div>
+            </div>
+
+            <!-- Item 5 -->
+            <div class="faq-item" id="faq-5">
+              <button class="faq-question-btn" onclick="toggleFaq('faq-5')" aria-expanded="false">
+                <div class="faq-question-left">
+                  <div class="faq-q-indicator">Q</div>
+                  <span class="faq-question-title">Which agents and chat apps?</span>
+                </div>
+                <span class="faq-toggle-icon">+</span>
+              </button>
+              <div class="faq-answer-panel">
+                Any coding agent Switch supports (Claude Code, Codex, OpenCode) in Slack, Teams, Discord or Mattermost. The demo runs on the local Mattermost that ships with Switch.
+              </div>
+            </div>
+
+            <!-- Item 6 -->
+            <div class="faq-item" id="faq-6">
+              <button class="faq-question-btn" onclick="toggleFaq('faq-6')" aria-expanded="false">
+                <div class="faq-question-left">
+                  <div class="faq-q-indicator">Q</div>
+                  <span class="faq-question-title">Where does my code go?</span>
+                </div>
+                <span class="faq-toggle-icon">+</span>
+              </button>
+              <div class="faq-answer-panel">
+                Switch and the agents run on your machine. Your chosen coding agent sends code context to its own model provider, as it normally would.
+              </div>
+            </div>
+
+            <!-- Item 7 -->
+            <div class="faq-item" id="faq-7">
+              <button class="faq-question-btn" onclick="toggleFaq('faq-7')" aria-expanded="false">
+                <div class="faq-question-left">
+                  <div class="faq-q-indicator">Q</div>
+                  <span class="faq-question-title">Which languages?</span>
+                </div>
+                <span class="faq-toggle-icon">+</span>
+              </button>
+              <div class="faq-answer-panel">
+                The demo covers JavaScript projects with npm.
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Section Get Started -->
+          <section class="get-started-box">
+            <h2 class="get-started-title">Get started</h2>
+            <p class="get-started-lead">
+              Bring the agents you already use. Clone the repo and run your first alert in about ten minutes.
+            </p>
+
+            <div class="terminal-block">
+              <div class="terminal-code">
+                <span class="terminal-prompt">$</span>
+                <span id="clone-cmd">git clone https://github.com/roshni09mishra-0/zeroday-sentry.git</span>
+              </div>
+              <button class="copy-btn" id="copy-btn" onclick="copyCloneCommand()">
+                <span>Copy</span>
+              </button>
+            </div>
+            <div class="terminal-sub">about ten minutes to your first alert</div>
+
+            <div class="cta-row">
+              <a href="https://github.com/roshni09mishra-0/zeroday-sentry" target="_blank" rel="noreferrer" class="btn btn-primary">
+                Clone the repo
+              </a>
+              <button type="button" class="btn btn-secondary" onclick="openVideoModal()">
+                Watch demo video
+              </button>
+            </div>
+          </section>
+
+        </div>
+      </main>
+
+    </div>
+
+    <!-- Video Modal / Notification -->
+    <div class="video-dialog-overlay" id="video-modal" onclick="closeVideoModalOnBg(event)">
+      <div class="video-modal-card">
+        <div class="video-modal-header">
+          <span class="video-modal-title font-mono">Demo Video Walkthrough</span>
+          <button class="video-modal-close" onclick="closeVideoModal()">✕</button>
+        </div>
+        <p style="font-size: 13.5px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px;">
+          The walkthrough video showcases the live Switch war room orchestration with Dependabot, <code>@cve-analyst</code>, <code>@patch-crafter</code>, and lead engineer approval on <code>acme/checkout-web</code>.
+        </p>
+        <div style="background-color: #0c0f14; border: 1px solid var(--border); padding: 14px; border-radius: 6px; font-size: 13px; font-family: 'JetBrains Mono', monospace; margin-bottom: 20px;">
+          <div style="color: var(--green-text); margin-bottom: 4px;">Status: Attached to hackathon submission</div>
+          <div style="color: var(--text-dim);">Project: ZeroDay Sentry · Powered by Switch</div>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <a href="demo-run.dc.html" class="btn btn-primary" style="font-size: 12px; padding: 8px 14px;">
+            See Interactive Run
+          </a>
+          <button type="button" class="btn btn-secondary" style="font-size: 12px; padding: 8px 14px;" onclick="closeVideoModal()">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shared Footer -->
+    <footer class="shared-footer">
+      <div>ZeroDay Sentry · <a href="https://github.com/roshni09mishra-0/zeroday-sentry" target="_blank" rel="noreferrer">GitHub</a> · <a href="#" onclick="openVideoModal(); return false;">Demo video</a> · Built for the Flip the Switch hackathon, powered by Switch</div>
+      <div>Demo repo and sample data. The CVEs are real.</div>
+    </footer>
+  </div>
+
+  <script>
+    function toggleFaq(id) {
+      const item = document.getElementById(id);
+      if (!item) return;
+      const isOpen = item.classList.contains('is-open');
+      item.classList.toggle('is-open');
+      const btn = item.querySelector('.faq-question-btn');
+      if (btn) {
+        btn.setAttribute('aria-expanded', !isOpen);
+      }
+    }
+
+    function copyCloneCommand() {
+      const cmdText = "git clone https://github.com/roshni09mishra-0/zeroday-sentry.git";
+      navigator.clipboard.writeText(cmdText).then(() => {
+        const btn = document.getElementById('copy-btn');
+        btn.classList.add('copied');
+        btn.innerHTML = '<span>Copied!</span>';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = '<span>Copy</span>';
+        }, 2000);
+      }).catch(() => {
+        // Fallback for older browsers
+        const temp = document.createElement('textarea');
+        temp.value = cmdText;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand('copy');
+        document.body.removeChild(temp);
+        const btn = document.getElementById('copy-btn');
+        btn.classList.add('copied');
+        btn.innerHTML = '<span>Copied!</span>';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = '<span>Copy</span>';
+        }, 2000);
+      });
+    }
+
+    function openVideoModal() {
+      const modal = document.getElementById('video-modal');
+      if (modal) modal.classList.add('active');
+    }
+
+    function closeVideoModal() {
+      const modal = document.getElementById('video-modal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function closeVideoModalOnBg(e) {
+      if (e.target && e.target.id === 'video-modal') {
+        closeVideoModal();
+      }
+    }
+  </script>
+</body>
+</html>
