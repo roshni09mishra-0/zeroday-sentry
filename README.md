@@ -1,7 +1,9 @@
 # ZeroDay Sentry — Your scanner cries wolf. We find the wolf.
 > **Submission for the Flip the Switch Hackathon (Nov 4–7, 2026)**  
 > **Track:** Track 1: Best Business Workflow ($2,000 Cash Prize)  
-> **Built on:** [Switch AI (`sandbox-quantum/switch`)](https://github.com/sandbox-quantum/switch) x WeMakeDevs x DevTools Academy
+> **Built on:** [Switch AI (`sandbox-quantum/switch`)](https://github.com/sandbox-quantum/switch) x WeMakeDevs x DevTools Academy  
+> **Live Production App:** [https://web-phi-livid-58sfauope0.vercel.app/](https://web-phi-livid-58sfauope0.vercel.app/)  
+> **4-Page Documentation Artboards:** [Home](https://web-phi-livid-58sfauope0.vercel.app/index.dc.html) · [How It Works](https://web-phi-livid-58sfauope0.vercel.app/how-it-works.dc.html) · [Demo Run](https://web-phi-livid-58sfauope0.vercel.app/demo-run.dc.html) · [FAQ & Setup](https://web-phi-livid-58sfauope0.vercel.app/faq.dc.html)
 
 ---
 
