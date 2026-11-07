@@ -1,0 +1,76 @@
+# Declarative Switch Workflow Definition
+# File: switch/workflows/zeroday-flow.yaml
+# Specification: Switch Workflow Engine v1
+version: 1
+name: zeroday-cve-triage-flow
+description: "End-to-end autonomous CVE reachability & safe remediation workflow"
+
+trigger:
+  event: "security_alert.created"
+  sources:
+    - dependabot
+    - snyk
+    - github_advisory
+
+room:
+  ref: "security-war-room"
+  template: "../examples/agent-templates/security-war-room.template.yaml"
+
+steps:
+  - id: step_ingest
+    name: "Ingest CVE Advisory"
+    action: "switch:room.broadcast"
+    params:
+      channel: "#security-war-room"
+      message: "🚨 Ingested advisory ${trigger.cve_id} for library ${trigger.package} (${trigger.current_version} -> ${trigger.patched_version})"
+
+  - id: step_reachability
+    name: "AST Reachability Analysis"
+    agent: "sentry-cve-analyst"
+    action: "agent:analyze_ast_call_graph"
+    input:
+      repository: "${trigger.repository}"
+      vulnerable_package: "${trigger.package}"
+      vulnerability_sink: "${trigger.vulnerable_function}"
+    output_variable: "reachability_result"
+
+  - id: step_branch_evaluation
+    name: "Evaluate Wolf vs Dead Code"
+    condition: "${reachability_result.is_reachable == true}"
+    on_false:
+      action: "switch:room.broadcast"
+      params:
+        message: "🐑 False Alarm (Crying Wolf): Method is never invoked in production runtime. Alert safely silenced."
+    on_true:
+      next: "step_remediate"
+
+  - id: step_remediate
+    name: "Codemod & Sandbox Verification"
+    agent: "sentry-patch-crafter"
+    action: "agent:upgrade_and_refactor"
+    input:
+      package: "${trigger.package}"
+      target_version: "${trigger.patched_version}"
+      call_site: "${reachability_result.call_location}"
+      test_suite_command: "npm test -- --coverage"
+    output_variable: "patch_result"
+
+  - id: step_human_gate
+    name: "Human-in-the-Loop Sign-Off"
+    action: "switch:room.request_approval"
+    params:
+      prompt: "One-click to ship: All ${patch_result.passed_tests} tests passing. Approve merge?"
+      buttons:
+        - label: "Approved (Merge PR)"
+          action: "approve"
+        - label: "Reject"
+          action: "reject"
+    timeout: "24h"
+
+  - id: step_merge
+    name: "Autonomous PR Merge"
+    action: "github:pr.merge"
+    input:
+      pr_number: "${patch_result.pr_number}"
+      merge_method: "squash"
+      delete_branch: true

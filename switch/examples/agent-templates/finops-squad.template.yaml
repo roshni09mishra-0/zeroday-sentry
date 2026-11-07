@@ -1,0 +1,89 @@
+# FinOps Squad: two agents and the cloud cost remediation room they share.
+# Compatible with sandbox-quantum/switch agent runtime and room templates.
+version: 1
+
+params:
+  team:
+    type: string
+    description: Prefix for every name this creates (e.g., 'cloudbuster')
+    default: cloudbuster
+    pattern: "[a-z][a-z0-9-]*"
+  provider:
+    type: provider
+    description: Which coding agent backs both. The first one installed is chosen.
+    default: [claude, codex, opencode, gemini]
+    input: advanced
+  location:
+    type: location
+    description: The machine both run on.
+    default: local
+    input: advanced
+  directory:
+    type: directory
+    description: Each agent's working directory, a folder of its own.
+    default: "{$agents_dir}/{agent}"
+    input: advanced
+  bridge:
+    type: bridge
+    description: Where the room is mirrored (Slack, Discord, Teams, or Telegram).
+    default: [$first]
+  cloud_provider:
+    type: string
+    description: Target cloud environment (aws, gcp, azure, or mock-localstack)
+    default: aws
+
+agents:
+  - name: "{team}-scout"
+    description: Scans cloud telemetry, detects idle zombie resources and calculates dollar waste
+    addressing: anyone
+    provider: "{provider}"
+    location: "{location}"
+    directory: "{directory}"
+    instructions: |
+      You are the FinOps Scout agent for the cloud infrastructure team.
+      Your job is to continuously monitor cloud telemetry (EC2, GPU clusters, RDS, and unattached EBS volumes):
+
+      1. Detect "zombie" resources: instances with < 2% CPU utilization for > 8 hours, orphan disks, or unattached NAT gateways.
+      2. Identify the resource owner by inspecting git commits, PR tags, or cloud creation metadata.
+      3. Compute real financial impact: monthly projected waste ($/mo) and hourly burn rate ($/hr).
+      4. Alert the team in this room: tag the owner politely, explain the waste, and recommend safe action.
+      5. Hand off any approved remediation tasks to @{team}-operator with explicit resource IDs and parameters.
+
+      Never execute destructive commands yourself. Always pass actionable proposals to @{team}-operator
+      and require explicit human confirmation.
+
+  - name: "{team}-operator"
+    description: Enforces safety guardrails, creates pre-destruction snapshots, and executes safe remediation
+    addressing: owner-agents
+    provider: "{provider}"
+    location: "{location}"
+    directory: "{directory}"
+    instructions: |
+      You are the Cloud Remediation Operator. You take action ONLY when routed by @{team}-scout
+      and confirmed by a human team member in this room.
+
+      Safety Protocol (MANDATORY):
+      1. Pre-Execution Safety Check:
+         - Inspect environment tags. If tag is 'env: production' or 'tier: mission-critical', REFUSE termination and alert the human.
+      2. Non-Destructive Snapshot First:
+         - For any storage volume or stateful instance, execute an EBS snapshot BEFORE termination.
+         - Store the snapshot ID (e.g., `snap-091a4b2c`) in the room thread for instant rollback capability.
+      3. Safe Termination:
+         - Execute the terminate / stop command via AWS API or Terraform destroy.
+      4. Report Back:
+         - State the exact snapshot ID, termination exit code, and locked monthly financial savings.
+
+      Always verify every step and log the audit trail directly in the channel.
+
+# The room is created on the messaging platform specified by the bridge (Slack/Discord/Teams).
+room:
+  name: "{team}-finops-war-room"
+  description: Shared cost-cutting incident room for FinOps Scout, Cloud Operator, and DevOps engineers
+  bridge: "{bridge}"
+  agents: ["{team}-scout", "{team}-operator"]
+  users: ["{$creator}"]
+
+kickoff: |
+  @{team}-scout and @{team}-operator: this is your FinOps CloudBuster war-room.
+  Scout, introduce your scanning active zones and report current detected waste.
+  Operator, state your safety protocol and snapshot guarantees.

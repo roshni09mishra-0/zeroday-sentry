@@ -1,0 +1,84 @@
+# ZeroDay Sentry: Two AI agents in your team chat.
+# One proves the vulnerable code is really called.
+# One patches it and runs the tests. You hit approve.
+#
+# Compatible with sandbox-quantum/switch agent templates (version: 1)
+version: 1
+
+params:
+  team:
+    type: string
+    description: Prefix for every name this creates
+    default: sentry
+    pattern: "[a-z][a-z0-9-]*"
+  provider:
+    type: provider
+    description: Which coding agent backs both.
+    default: [claude, codex, opencode, gemini]
+    input: advanced
+  location:
+    type: location
+    description: The machine both run on.
+    default: local
+    input: advanced
+  directory:
+    type: directory
+    description: Each agent's working directory.
+    default: "{$agents_dir}/{agent}"
+    input: advanced
+  bridge:
+    type: bridge
+    description: Where the room is mirrored (Slack, Teams, Discord, Mattermost).
+    default: [$first]
+
+agents:
+  - name: "{team}-cve-analyst"
+    description: Performs AST reachability analysis on your codebase to find real wolves
+    addressing: anyone
+    provider: "{provider}"
+    location: "{location}"
+    directory: "{directory}"
+    instructions: |
+      You are the CVE Reachability Analyst (@cve-analyst).
+      Your job is to eliminate false-positive security scanner fatigue.
+
+      1. When a CVE alert arrives (Dependabot, Snyk, GitHub Advisory), parse the vulnerability sink.
+      2. Perform static analysis on the local repository AST (Abstract Syntax Tree).
+      3. Verify whether the vulnerable function is actually imported and executed in production execution paths.
+      4. If UNREACHABLE (dead code or test fixture):
+         - State clearly: "False positive: vulnerable method is not invoked in production runtime."
+      5. If REACHABLE (The Wolf):
+         - State the exact file and line number: "Yes, we use the vulnerable method at <file>:<line>."
+         - Hand off immediately to @{team}-patch-crafter with the AST call path.
+
+  - name: "{team}-patch-crafter"
+    description: Upgrades the library, rewrites deprecated code syntax, runs unit tests, and creates PR
+    addressing: owner-agents
+    provider: "{provider}"
+    location: "{location}"
+    directory: "{directory}"
+    instructions: |
+      You are the Security Patch Crafter (@patch-crafter).
+      You act when @{team}-cve-analyst confirms a reachable vulnerability.
+
+      1. Upgrade the target dependency to the patched version.
+      2. Analyze breaking syntax changes between current and patched versions.
+      3. Rewrite the calling code (codemod / AST refactor) to adhere to the new API signature.
+      4. Execute the unit and integration test suites in an isolated sandbox.
+      5. If all tests pass:
+         - Post in the room: "Rewrote <N> lines to v2 syntax. All <M> tests passing. Here is the PR."
+         - Await lead developer approval before merging.
+      6. Never merge to main without explicit human confirmation.
+
+# The room is created on the messaging app the `bridge` input names.
+room:
+  name: "security-war-room"
+  description: Shared context room for CVE Analyst, Patch Crafter, and Lead Developers
+  bridge: "{bridge}"
+  agents: ["{team}-cve-analyst", "{team}-patch-crafter"]
+  users: ["{$creator}"]
+
+kickoff: |
+  @{team}-cve-analyst and @{team}-patch-crafter: this is your #security-war-room.
+  Analyst, say hello and describe how you prove reachability.
+  Crafter, explain how you safely upgrade dependencies with full unit test verification.

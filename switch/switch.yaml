@@ -1,0 +1,48 @@
+# Switch Configuration File
+# Project: ZeroDay Sentry — We find the wolf.
+version: 1
+
+project:
+  name: zeroday-sentry
+  version: "1.0.0"
+  description: "Two AI agents in your team chat finding and patching reachable CVEs via Switch"
+
+bridges:
+  slack:
+    enabled: true
+    adapter: "@switch/bridge-slack"
+    config:
+      bot_token: "${SLACK_BOT_TOKEN:-xoxb-mock-token}"
+      app_token: "${SLACK_APP_TOKEN:-xapp-mock-token}"
+      default_channel: "#security-war-room"
+  discord:
+    enabled: false
+    adapter: "@switch/bridge-discord"
+  teams:
+    enabled: false
+    adapter: "@switch/bridge-teams"
+
+agents:
+  cve-analyst:
+    template: "./examples/agent-templates/security-war-room.template.yaml"
+    role: analyst
+    model: "gemini-2.0-flash"
+    capabilities:
+      - ast_reachability_scan
+      - call_graph_traversal
+      - filter_dead_code
+  patch-crafter:
+    template: "./examples/agent-templates/security-war-room.template.yaml"
+    role: crafter
+    model: "gemini-2.0-flash"
+    capabilities:
+      - upgrade_dependency
+      - rewrite_deprecated_syntax
+      - run_unit_tests
+      - generate_pull_request
+
+guardrails:
+  human_in_the_loop: true
+  mandatory_test_pass: true
+  min_test_coverage: 100
+  never_merge_without_approval: true
