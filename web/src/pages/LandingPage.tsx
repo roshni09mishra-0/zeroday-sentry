@@ -165,16 +165,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <ArrowUpRight className="w-4 h-4 text-neutral-600" />
               </a>
 
-              <button
-                onClick={() => {
-                  setShowDemoModal(true);
-                  setDemoStep(0);
-                }}
+              <a
+                href="https://www.loom.com/share/a784a8fbe22e49bc88bfcfabb4443852"
+                target="_blank"
+                rel="noreferrer"
                 className="px-5 py-3.5 bg-black text-white font-mono text-xs font-bold border-2 border-black shadow-neo hover:-translate-y-1 hover:shadow-neo-lg active:translate-y-0.5 transition-neo flex items-center gap-2 cursor-pointer"
               >
                 <Play className="w-3.5 h-3.5 fill-[#FFE500] text-[#FFE500]" />
-                <span>Watch demo video</span>
-              </button>
+                <span>Watch demo video (Loom)</span>
+              </a>
             </div>
 
             {/* Trust Line */}

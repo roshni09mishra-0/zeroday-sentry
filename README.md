@@ -3,7 +3,23 @@
 > **Track:** Track 1: Best Business Workflow ($2,000 Cash Prize)  
 > **Built on:** [Switch AI (`sandbox-quantum/switch`)](https://github.com/sandbox-quantum/switch) x WeMakeDevs x DevTools Academy  
 > **Live Production App:** [https://web-phi-livid-58sfauope0.vercel.app/](https://web-phi-livid-58sfauope0.vercel.app/)  
+> **Official Demo Video:** [https://www.loom.com/share/a784a8fbe22e49bc88bfcfabb4443852](https://www.loom.com/share/a784a8fbe22e49bc88bfcfabb4443852)  
 > **4-Page Documentation Artboards:** [Home](https://web-phi-livid-58sfauope0.vercel.app/index.dc.html) · [How It Works](https://web-phi-livid-58sfauope0.vercel.app/how-it-works.dc.html) · [Demo Run](https://web-phi-livid-58sfauope0.vercel.app/demo-run.dc.html) · [FAQ & Setup](https://web-phi-livid-58sfauope0.vercel.app/faq.dc.html)
+
+---
+
+## 📺 Demo Video Walkthrough & Script
+
+Watch our live 2-minute walkthrough on Loom:  
+👉 **[Watch ZeroDay Sentry Demo on Loom](https://www.loom.com/share/a784a8fbe22e49bc88bfcfabb4443852)**
+
+| Timestamp | Screen / Flow | Video Walkthrough Script |
+| :--- | :--- | :--- |
+| **0:00 - 0:35** | Home Page / The Problem | *"Hi everyone! This is ZeroDay Sentry, built for the Flip the Switch Hackathon, Track 1: Best Business Workflow. Scanners match version numbers, not execution call paths. Over 60% of alerts are noise in dead code, and upgrades break syntax. Sentry puts two AI agents in your team chat to answer: do we call it, and can we upgrade safely?"* |
+| **0:35 - 1:15** | Live Switch War Room | *"In `#security-war-room`, Dependabot flagged two CVEs on `acme/checkout-web`: lodash and axios. Our Switch agent `@cve-analyst` parsed the code call tree. It proved `lodash` was harmless dead code (no calls to `_.template`), but `axios` had an active XSRF token leak at `client.js:42`."* |
+| **1:15 - 1:45** | Automated Patch & Sandbox Tests | *"Next, `@patch-crafter` branched the code, bumped axios to 1.6.8, automatically resolved a breaking CommonJS Jest import error, and ran tests until all 18 of 18 test suites passed green with zero regressions."* |
+| **1:45 - 2:15** | Human Approval Gate & SQLite Ledger | *"Nothing ever merges without a human. As lead developer, I inspect the diff in the thread and click Approve. Switch triggers the 1-click squash merge to main and records the approval into our persistent SQLite database ledger."* |
+| **2:15 - 2:30** | Conclusion & GitHub Sync | *"The entire system—including the 4-page developer documentation, SQLite ledger, and declarative Switch flows—is open-source and live on Vercel. Thank you!"* |
 
 ---
 
