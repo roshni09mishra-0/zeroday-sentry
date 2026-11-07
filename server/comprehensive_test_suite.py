@@ -191,6 +191,43 @@ def test_yaml_files_exist():
 
 run_test("Switch YAML Specifications & Official Template Schemas", test_yaml_files_exist)
 
+# 8. Persistent SQLite Database Integration
+print("\n>>> SUITE 8: Persistent SQLite Database Ledger")
+def test_database_ledger():
+    # 1. Verify DB file exists on disk
+    db_file = os.path.join(os.path.dirname(__file__), "zeroday_sentry.db")
+    assert os.path.exists(db_file), "Database file zeroday_sentry.db does not exist"
+
+    # 2. Query CVEs from API
+    res = requests.get("http://127.0.0.1:8787/api/cves", timeout=5)
+    assert res.status_code == 200, f"Failed to list CVEs: {res.status_code}"
+    cves = res.json()
+    assert len(cves) >= 2, "Expected at least 2 CVEs in database"
+    cve_ids = [c["cve_id"] for c in cves]
+    assert "CVE-2023-45857" in cve_ids, "Missing axios CVE-2023-45857"
+    assert "CVE-2021-23337" in cve_ids, "Missing lodash CVE-2021-23337"
+
+    # 3. Query Messages from API
+    msg_res = requests.get("http://127.0.0.1:8787/api/messages", timeout=5)
+    assert msg_res.status_code == 200, f"Failed to get messages: {msg_res.status_code}"
+    messages = msg_res.json()
+    assert len(messages) >= 5, "Expected at least 5 seeded war-room messages"
+
+    # 4. Insert New Message into DB
+    new_msg = {
+        "id": f"test-msg-{os.getpid()}",
+        "room_id": "security-war-room",
+        "sender_type": "human",
+        "author_name": "Meera (lead dev)",
+        "tag": "Lead Dev",
+        "content": "Automated verification test audit ping",
+        "timestamp_str": "11:15"
+    }
+    post_res = requests.post("http://127.0.0.1:8787/api/messages", json=new_msg, timeout=5)
+    assert post_res.status_code == 200, "Failed to persist message to database"
+
+run_test("SQLite Ledger: CVEs, Audit Trail & War Room History", test_database_ledger)
+
 # Summary
 print("\n" + "=" * 65)
 print(f"  TOTAL TESTS RUN: {TOTAL_TESTS} | PASSED: {PASSED_TESTS} | FAILED: {FAILED_TESTS}")
