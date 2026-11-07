@@ -1,9 +1,20 @@
 /**
  * ZeroDay Sentry - Live Backend & SQLite Database API Client
  * Connects the React Web Application to the FastAPI backend and persistent SQLite ledger.
+ * Seamlessly switches between local FastAPI server and Vercel Serverless environment.
  */
 
-const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8787';
+const isLocalhost = typeof window !== 'undefined' && (
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1' ||
+  window.location.hostname === '0.0.0.0'
+);
+
+const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL !== undefined && import.meta.env.VITE_BACKEND_URL !== ''
+  ? import.meta.env.VITE_BACKEND_URL
+  : isLocalhost
+    ? 'http://127.0.0.1:8787'
+    : '';
 
 export interface DbCVE {
   id?: number;
@@ -47,7 +58,7 @@ export const apiService = {
    */
   async checkHealth(): Promise<boolean> {
     try {
-      const res = await fetch(`${BACKEND_BASE}/`, { method: 'GET' });
+      const res = await fetch(`${BACKEND_BASE}/api`, { method: 'GET' });
       return res.ok;
     } catch {
       return false;
@@ -86,35 +97,58 @@ export const apiService = {
    * Query the Switch AI squad (@cve-analyst & @patch-crafter) and save exchange into DB.
    */
   async sendChat(message: string, cveContext: string = 'CVE-2023-45857'): Promise<{ reply: string; sender: string; authorName: string }> {
-    const res = await fetch(`${BACKEND_BASE}/api/switch/chat`, {
+    const payload = JSON.stringify({
+      message,
+      sender: 'You (Lead Dev)',
+      cve_context: cveContext
+    });
+
+    try {
+      const res = await fetch(`${BACKEND_BASE}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload
+      });
+      if (res.ok) return await res.json();
+    } catch (_) {}
+
+    // Fallback to /api/switch/chat for local uvicorn
+    const res2 = await fetch(`${BACKEND_BASE}/api/switch/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message,
-        sender: 'You (Lead Dev)',
-        cve_context: cveContext
-      })
+      body: payload
     });
-    if (!res.ok) throw new Error(`Chat error HTTP ${res.status}`);
-    return await res.json();
+    if (!res2.ok) throw new Error(`Chat error HTTP ${res2.status}`);
+    return await res2.json();
   },
 
   /**
    * 1-Click human sign-off: marks PR as merged in the database ledger.
    */
   async approvePR(prNumber: number = 23, cveId: string = 'CVE-2023-45857', approver: string = 'Meera (lead dev)'): Promise<ApprovalResponse> {
-    const res = await fetch(`${BACKEND_BASE}/api/github/pr/approve`, {
+    const payload = JSON.stringify({
+      pr_number: prNumber,
+      cve_id: cveId,
+      approver: approver,
+      notes: '1-click human approval from Switch War Room'
+    });
+
+    try {
+      const res = await fetch(`${BACKEND_BASE}/api/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload
+      });
+      if (res.ok) return await res.json();
+    } catch (_) {}
+
+    const res2 = await fetch(`${BACKEND_BASE}/api/github/pr/approve`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        pr_number: prNumber,
-        cve_id: cveId,
-        approver: approver,
-        notes: '1-click human approval from Switch War Room'
-      })
+      body: payload
     });
-    if (!res.ok) throw new Error(`Approval error HTTP ${res.status}`);
-    return await res.json();
+    if (!res2.ok) throw new Error(`Approval error HTTP ${res2.status}`);
+    return await res2.json();
   },
 
   /**

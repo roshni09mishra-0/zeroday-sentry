@@ -3,6 +3,7 @@
   "outputDirectory": "dist",
   "cleanUrls": true,
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/index.dc.html", "destination": "/index.dc.html" },
     { "source": "/how-it-works.dc.html", "destination": "/how-it-works.dc.html" },
     { "source": "/demo-run.dc.html", "destination": "/demo-run.dc.html" },
