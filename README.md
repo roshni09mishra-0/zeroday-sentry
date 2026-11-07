@@ -4,6 +4,7 @@
 > **Built on:** [Switch AI (`sandbox-quantum/switch`)](https://github.com/sandbox-quantum/switch) x WeMakeDevs x DevTools Academy  
 > **Live Production App:** [https://web-phi-livid-58sfauope0.vercel.app/](https://web-phi-livid-58sfauope0.vercel.app/)  
 > **Official Demo Video:** [https://www.loom.com/share/a784a8fbe22e49bc88bfcfabb4443852](https://www.loom.com/share/a784a8fbe22e49bc88bfcfabb4443852)  
+> **Official Technical Blog Post:** [https://dev.to/roshni_mishra_9ed865d304f/how-we-built-zeroday-sentry-on-switch-taming-dependency-alert-fatigue-with-ai-teammates-1c5a](https://dev.to/roshni_mishra_9ed865d304f/how-we-built-zeroday-sentry-on-switch-taming-dependency-alert-fatigue-with-ai-teammates-1c5a)  
 > **4-Page Documentation Artboards:** [Home](https://web-phi-livid-58sfauope0.vercel.app/index.dc.html) · [How It Works](https://web-phi-livid-58sfauope0.vercel.app/how-it-works.dc.html) · [Demo Run](https://web-phi-livid-58sfauope0.vercel.app/demo-run.dc.html) · [FAQ & Setup](https://web-phi-livid-58sfauope0.vercel.app/faq.dc.html)
 
 ---
