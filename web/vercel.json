@@ -1,0 +1,12 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/index.dc.html", "destination": "/index.dc.html" },
+    { "source": "/how-it-works.dc.html", "destination": "/how-it-works.dc.html" },
+    { "source": "/demo-run.dc.html", "destination": "/demo-run.dc.html" },
+    { "source": "/faq.dc.html", "destination": "/faq.dc.html" },
+    { "source": "/((?!.*\\.).*)", "destination": "/index.html" }
+  ]
+}
